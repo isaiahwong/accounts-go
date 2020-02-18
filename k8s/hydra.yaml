@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hydra-service
+spec:
+  ports:
+  - name: hydra-public-port
+    port: 9000
+    targetPort: public-port
+  - name: hydra-admin-port
+    port: 9001
+    targetPort: admin-port
+  selector: 
+    component: hydra
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hydra-deployment
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      component: hydra
+  template:
+    metadata:
+      labels:
+        component: hydra
+    spec:
+      initContainers:
+      - name: hydra-sql-migration
+        image: oryd/hydra:v1.2.3
+        command: ['hydra', 'migrate', 'sql', '--yes' , 'postgres://devuser:devuser123)@hydra-postgres-service.default.svc.cluster.local:5432/hydra?sslmode=disable']
+      containers:
+        - name: hydra
+          image: oryd/hydra:v1.2.3
+          command: ['hydra', 'serve', all, '--dangerous-force-http']
+          ports:
+            - name: public-port
+              containerPort: 4444
+            - name: admin-port
+              containerPort: 4445
+          envFrom:
+          - secretRef:
+              name: hydra-postgres-secrets
+          - configMapRef:
+              name: hydra-config
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hydra-secrets
+type: Opaque
+data:
+  SECRETS_SYSTEM: OUVlNmRYcFNLU2luc0FaT0wwRkdMQ1dncmRsN2dhQmM= 
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hydra-config
+  namespace: default
+data:
+  DSN: "postgres://devuser:devuser123)@hydra-postgres-service.default.svc.cluster.local:5432/hydra?sslmode=disable"
+  URLS_SELF_ISSUER: "http://localhost/issuer"
+  URLS_CONSENT: "http://localhost/consent"
+  URLS_LOGIN: "http://localhost/login"
+  URLS_LOGOUT: "http://localhost/logout"
+  URLS_ERROR: "http://localhost/error"
+  URLS_POST_LOGOUT_REDIRECT: "http://localhost"
