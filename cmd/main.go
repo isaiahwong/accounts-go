@@ -12,11 +12,22 @@ var s *server.Server
 func init() {
 	var err error
 
+	config := loadEnv()
+
 	// Initialize a new logger
 	l := log.NewLogrusLogger()
 
 	// Initialize a new Store
-	m, err := store.NewMongoStore()
+	m, err := store.NewMongoStore(
+		store.WithDatabase(config.DBName),
+		store.WithConnectionString(config.DBUri),
+		store.WithTimeout(config.DBTimeout),
+		store.WithAuth(store.MongoCredential{
+			Username: config.DBUser,
+			Password: config.DBPassword,
+		}),
+		store.WithHeartbeat(config.DBTimeout),
+	)
 	if err != nil {
 		l.Fatalf("NewMongoStore: %v", err)
 	}
@@ -28,6 +39,8 @@ func init() {
 		server.WithName("Auth Service"),
 		server.WithMongoStore(m),
 	)
+	s.Production = config.Production
+
 	if err != nil {
 		l.Fatalf("NewServer: %v", err)
 	}
@@ -41,5 +54,6 @@ func init() {
 
 // Execute starts application
 func Execute() {
-	s.Serve()
+	err := s.Serve()
+	panic(err)
 }

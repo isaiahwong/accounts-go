@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/isaiahwong/go-services/src/payment/model"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -14,8 +12,10 @@ import (
 
 // MongoStore struct wrapper
 type MongoStore struct {
-	client *mongo.Client
-	opts   *mongoOptions
+	Client   *mongo.Client
+	opts     *mongoOptions
+	Database string
+	Timeout  time.Duration
 }
 
 // NewMongoStore provides a new MongoStore
@@ -37,14 +37,22 @@ func NewMongoStore(opt ...MongoOption) (*MongoStore, error) {
 		return nil, err
 	}
 	return &MongoStore{
-		client: c,
-		opts:   &opts,
+		Client:   c,
+		opts:     &opts,
+		Database: opts.database,
+		Timeout:  opts.timeout,
 	}, nil
 }
 
 // Connect connects to mongodb
 func (m *MongoStore) Connect(ctx context.Context) error {
-	err := m.client.Connect(ctx)
+	var cancel context.CancelFunc
+	if ctx == nil {
+		ctx, cancel = context.WithTimeout(context.Background(), m.opts.timeout)
+		defer cancel()
+	}
+
+	err := m.Client.Connect(ctx)
 	if err != nil {
 		return &connectError{fmt.Sprintf("Mongo Connection %v", err)}
 	}
@@ -59,34 +67,17 @@ func (m *MongoStore) Connect(ctx context.Context) error {
 
 // Disconnect Disconnects Mongo client
 func (m *MongoStore) Disconnect(ctx context.Context) error {
-	return m.client.Disconnect(ctx)
+	return m.Client.Disconnect(ctx)
 }
 
 // Ping verifies that the client can connect to the topology.
 func (m *MongoStore) Ping() error {
-	ctx, _ := context.WithTimeout(context.Background(), m.opts.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), m.opts.timeout)
+	defer cancel()
 	// Test connection
-	err := m.client.Ping(ctx, readpref.Primary())
+	err := m.Client.Ping(ctx, readpref.Primary())
 	if err != nil {
 		return &connectError{fmt.Sprintf("Mongo Connection %v", err)}
 	}
 	return nil
-}
-
-// Create creates a new payment object
-func (m *MongoStore) Create(ctx context.Context, payment *model.Payment) (*primitive.ObjectID, error) {
-	coll := m.client.Database(m.opts.database).Collection("payment")
-	payment.ID = primitive.NewObjectID()
-	payment.Updated = time.Now()
-	payment.Created = time.Now()
-
-	res, err := coll.InsertOne(ctx, payment)
-	if err != nil {
-		return nil, err
-	}
-	oid, ok := res.InsertedID.(primitive.ObjectID)
-	if !ok {
-		return nil, &idError{"Invalid OID"}
-	}
-	return &oid, nil
 }

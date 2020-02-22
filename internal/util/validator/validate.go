@@ -6,10 +6,11 @@ import (
 
 // Error stores error details
 type Field struct {
-	Param   string
-	Message string
-	Value   interface{}
-	Tag     string
+	Param      string
+	Message    string
+	Value      interface{}
+	OtherValue interface{}
+	Tag        string
 }
 
 type Error struct {
@@ -19,10 +20,18 @@ type Error struct {
 }
 
 // Val returns errors
-func Val(fields ...Field) (errors []Error) {
-	validate := validator.New()
+func Val(validate *validator.Validate, fields ...Field) (errors []Error) {
+	if validate == nil {
+		validate = validator.New()
+	}
 	for _, field := range fields {
-		err := validate.Var(field.Value, field.Tag)
+		var err error
+		if field.OtherValue != nil {
+			err = validate.VarWithValue(field.Value, field.OtherValue, field.Tag)
+		} else {
+			err = validate.Var(field.Value, field.Tag)
+		}
+
 		if err != nil {
 			field.Tag = ""
 			errors = append(errors, Error{

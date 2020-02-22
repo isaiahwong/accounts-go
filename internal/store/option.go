@@ -20,6 +20,7 @@ type MongoOption func(*mongoOptions, *options.ClientOptions)
 var defaultOptions = mongoOptions{
 	connstr:  "mongodb://localhost:27017/",
 	database: "auth",
+	timeout:  15,
 }
 
 // MongoCredential holds auth options.
@@ -33,34 +34,34 @@ type MongoCredential struct {
 	PasswordSet             bool
 }
 
-// ConnectionString returns MongoOption; sets
-func ConnectionString(connstr string) MongoOption {
+// WithConnectionString returns MongoOption; sets
+func WithConnectionString(connstr string) MongoOption {
 	return func(o *mongoOptions, m *options.ClientOptions) {
 		o.connstr = connstr
 		m.ApplyURI(connstr)
 	}
 }
 
-// Database returns MongoOption; sets default database
-func Database(db string) MongoOption {
+// WithDatabase returns MongoOption; sets default database
+func WithDatabase(db string) MongoOption {
 	return func(o *mongoOptions, m *options.ClientOptions) {
 		o.database = db
 	}
 }
 
-// SetTimeout specifies the timeout for an initial connection to a server.
+// WithTimeout specifies the timeout for an initial connection to a server.
 // If a custom Dialer is used, this method won't be set and the user is
 // responsible for setting the ConnectTimeout for connections on the dialer
 // themselves.
-func SetTimeout(t time.Duration) MongoOption {
+func WithTimeout(t time.Duration) MongoOption {
 	return func(o *mongoOptions, m *options.ClientOptions) {
 		o.timeout = t
 		m.SetConnectTimeout(1 * time.Second)
 	}
 }
 
-// SetAuth Authentication for mongodb
-func SetAuth(credential MongoCredential) MongoOption {
+// WithAuth Authentication for mongodb
+func WithAuth(credential MongoCredential) MongoOption {
 	return func(o *mongoOptions, m *options.ClientOptions) {
 		m.SetAuth(options.Credential{
 			AuthMechanism: credential.AuthMechanism,
@@ -72,8 +73,8 @@ func SetAuth(credential MongoCredential) MongoOption {
 	}
 }
 
-// SetHeartbeat TODO
-func SetHeartbeat(t time.Duration) MongoOption {
+// WithHeartbeat TODO
+func WithHeartbeat(t time.Duration) MongoOption {
 	return func(o *mongoOptions, m *options.ClientOptions) {
 		m.SetHeartbeatInterval(t)
 	}

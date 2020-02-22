@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
+	"github.com/isaiahwong/auth-go/internal/util"
 	"github.com/joho/godotenv"
 )
 
@@ -41,41 +41,30 @@ type EnvConfig struct {
 	DBTimeout  time.Duration
 }
 
-func mapEnvWithDefaults(envKey string, defaults string) string {
-	v := os.Getenv(envKey)
-	if v == "" {
-		if defaults == "" {
-			panic("defaults is not specified")
-		}
-		return defaults
-	}
-	return v
-}
-
 // LoadEnv loads environment variables for Application
 func loadEnv() *EnvConfig {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println(".env not loaded", err)
+		fmt.Printf(".env not loaded: %v", err)
 	}
 
 	// Convert to int
-	sec, err := strconv.ParseInt(mapEnvWithDefaults("DB_TIMEOUT", "3"), 10, 64)
+	sec, err := strconv.ParseInt(util.MapEnvWithDefaults("DB_TIMEOUT", "10"), 10, 64)
 	if err != nil {
 		fmt.Printf("Error parsing DB_TIMEOUT: %v\nWill fallback to default value", err)
-		sec = 3
+		sec = 10
 	}
 
 	dBTimeout := time.Duration(sec) * time.Second
 
 	return &EnvConfig{
-		AppEnv:     mapEnvWithDefaults("APP_ENV", "development"),
-		Production: mapEnvWithDefaults("APP_ENV", "development") == "true",
-		Address:    mapEnvWithDefaults("ADDRESS", "5000"),
-		DBUri:      mapEnvWithDefaults("DB_URI", "mongodb://localhost:27017"),
-		DBName:     mapEnvWithDefaults("DB_NAME", "auth"),
-		DBUser:     mapEnvWithDefaults("DB_USER", ""),
-		DBPassword: mapEnvWithDefaults("DB_PASSWORD", ""),
+		AppEnv:     util.MapEnvWithDefaults("APP_ENV", "development"),
+		Production: util.MapEnvWithDefaults("APP_ENV", "development") == "true",
+		Address:    util.MapEnvWithDefaults("ADDRESS", "5000"),
+		DBUri:      util.MapEnvWithDefaults("DB_URI", "mongodb://localhost:27017"),
+		DBName:     util.MapEnvWithDefaults("DB_NAME", "auth"),
+		DBUser:     util.MapEnvWithDefaults("DB_USER", ""),
+		DBPassword: util.MapEnvWithDefaults("DB_PASSWORD", ""),
 		DBTimeout:  dBTimeout,
 	}
 }

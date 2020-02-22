@@ -1,44 +1,23 @@
 package auth
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/isaiahwong/auth-go/internal/store"
 	"github.com/isaiahwong/auth-go/internal/util/log"
 	pb "github.com/isaiahwong/auth-go/protogen/auth/v1"
-	"google.golang.org/grpc"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 // Service defines the logic for authentication
 type Service struct {
-	logger log.Logger
-	store  *store.MongoStore
-}
-
-type serviceOption struct {
+	production bool
 	logger     log.Logger
 	store      *store.MongoStore
-	grpcServer *grpc.Server
-}
+	policy     *bluemonday.Policy
+	validate   *validator.Validate
 
-// ServiceOption sets options
-type ServiceOption func(*serviceOption)
-
-var defaultServiceOption = serviceOption{
-	logger: log.NewLogrusLogger(),
-}
-
-// WithLogger returns a ServiceOption that will set the internal
-// logging of the server
-func WithLogger(l log.Logger) ServiceOption {
-	return func(o *serviceOption) {
-		o.logger = l
-	}
-}
-
-// WithGrpc returns a ServiceOption that will set the gRPC server
-func WithGrpc(g *grpc.Server) ServiceOption {
-	return func(o *serviceOption) {
-		o.grpcServer = g
-	}
+	recaptchaURL    string
+	recaptchaSecret string
 }
 
 // RegisterService takes in arguments notably grpcServer which is needed to register for
@@ -52,7 +31,10 @@ func RegisterService(opt ...ServiceOption) error {
 		return &InvalidParam{"grpcServer is nil, RegisterService requires type *grpc.Server"}
 	}
 	svc := &Service{
-		logger: opts.logger,
+		production: opts.production,
+		logger:     opts.logger,
+		policy:     bluemonday.StrictPolicy(),
+		validate:   validator.New(),
 	}
 	// Register AuthService
 	pb.RegisterAuthServiceServer(opts.grpcServer, svc)

@@ -25,6 +25,11 @@ type Server struct {
 
 // Serve starts gRPC server as well as other dependencies such as connect to store
 func (s *Server) Serve() error {
+	err := s.store.Connect(nil)
+	if err != nil {
+		return err
+	}
+
 	s.logger.Infof("Serving %v on %v %v", s.Name, s.listener.Addr().Network(), s.listener.Addr().String())
 	s.logger.Infof("Production: %v", s.Production)
 	if err := s.GRPCServer.Serve(s.listener); err != nil {
@@ -67,6 +72,7 @@ func New(opt ...Option) (*Server, error) {
 	server := &Server{
 		GRPCServer: gs,
 		listener:   lis,
+		store:      opts.store,
 		logger:     opts.logger,
 		Production: opts.production,
 		Name:       opts.name,
