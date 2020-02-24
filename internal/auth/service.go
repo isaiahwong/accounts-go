@@ -51,6 +51,7 @@ func RegisterService(opt ...ServiceOption) error {
 		policy:     bluemonday.StrictPolicy(),
 		validate:   validator.New(),
 	}
+	// Initializes repositories
 	if err := svc.initRepoWithMongo(opts.store); err != nil {
 		return err
 	}

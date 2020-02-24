@@ -14,9 +14,9 @@ type Field struct {
 }
 
 type Error struct {
-	Param   string
-	Message string
-	Value   interface{}
+	Param   string      `json:"param"`
+	Message string      `json:"message"`
+	Value   interface{} `json:"value"`
 }
 
 // Val returns errors

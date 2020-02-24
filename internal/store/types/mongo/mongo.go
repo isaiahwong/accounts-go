@@ -130,6 +130,7 @@ func (m *MongoStore) Connect(ctx context.Context) error {
 		return &connectError{fmt.Sprintf("Mongo Connection %v", err)}
 	}
 
+	// Test Connectivity
 	pe := m.Ping()
 	if pe != nil {
 		return pe

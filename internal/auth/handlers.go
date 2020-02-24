@@ -9,6 +9,8 @@ import (
 	"github.com/isaiahwong/auth-go/internal/util/recaptcha"
 	"github.com/isaiahwong/auth-go/internal/util/validator"
 	pb "github.com/isaiahwong/auth-go/protogen/auth/v1"
+	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -21,10 +23,10 @@ func (s *Service) IsAuthenticated(ctx context.Context, in *pb.Empty) (*pb.Authen
 
 // SignUp is a gRPC handler allows user to register
 func (s *Service) SignUp(ctx context.Context, req *pb.SignUpRequest) (*pb.UserResponse, error) {
-	e := strings.ToLower(strings.TrimSpace(req.GetEmail()))
-	p := strings.TrimSpace(req.GetPassword())
-	cp := strings.TrimSpace(req.GetConfirmPassword())
-	tok := strings.TrimSpace(req.GetCaptchaToken())
+	email := strings.ToLower(strings.TrimSpace(req.GetEmail()))
+	password := strings.TrimSpace(req.GetPassword())
+	cpassword := strings.TrimSpace(req.GetConfirmPassword())
+	token := strings.TrimSpace(req.GetCaptchaToken())
 	ip := strings.TrimSpace(req.GetIp())
 	md := metadata.Pairs()
 
@@ -33,30 +35,31 @@ func (s *Service) SignUp(ctx context.Context, req *pb.SignUpRequest) (*pb.UserRe
 		validator.Field{
 			Param:   "email",
 			Message: "Invalid email",
-			Value:   e,
+			Value:   email,
 			Tag:     "required,email,max=64",
 		},
 		validator.Field{
 			Param:   "password",
 			Message: "Password required",
-			Value:   p,
+			Value:   password,
 			Tag:     "required,max=64",
 		},
 		validator.Field{
 			Param:      "confirm_password",
 			Message:    "Passwords do not match",
-			Value:      cp,
-			OtherValue: p,
+			Value:      cpassword,
+			OtherValue: password,
 			Tag:        `eqfield`,
 		},
 		validator.Field{
 			Param:   "captcha_token",
 			Message: "Captcha token required",
-			Value:   tok,
+			Value:   token,
 			Tag:     `required`,
 		},
 	)
 
+	// Validate
 	if errors != nil {
 		json, jerr := json.Marshal(errors)
 		if jerr != nil {
@@ -68,9 +71,10 @@ func (s *Service) SignUp(ctx context.Context, req *pb.SignUpRequest) (*pb.UserRe
 		return nil, status.Error(codes.InvalidArgument, "Invalid arguments")
 	}
 
+	// Verify reCAPTCHA
 	// rcpResp := recaptcha.Response{}
 	if s.production {
-		rcpResp, err := recaptcha.Verify(tok, ip)
+		rcpResp, err := recaptcha.Verify(token, ip)
 		if err != nil || !rcpResp.Success {
 			s.logger.Errorf("SignUp: recaptcha verify: %v", err)
 			return nil, status.Error(codes.InvalidArgument, "Captcha Verification Failed")
@@ -79,25 +83,52 @@ func (s *Service) SignUp(ctx context.Context, req *pb.SignUpRequest) (*pb.UserRe
 		// 	t, err := time.Parse(time.RFC3339, r.ChallengeTSISO)
 	}
 
-	// Hash password
-
-	u := &models.User{
-		Auth: models.Auth{
-			Email: e,
+	// Check if email exists
+	u := s.userRepo.FindOne(nil, bson.M{
+		"$or": []interface{}{
+			bson.M{"auth.email": email},
 		},
+	})
+
+	// Reject is user exists
+	if u != nil {
+		json, jerr := json.Marshal(validator.Error{
+			Param:   "email",
+			Message: "Email is already in used",
+			Value:   email,
+		})
+		if jerr != nil {
+			s.logger.Errorf("SignUp Handler: %v", jerr)
+			return nil, status.Error(codes.Internal, "An Internal error has occurred")
+		}
+		md.Append("errors-bin", string(json))
+		grpc.SetTrailer(ctx, md)
+		return nil, status.Error(codes.InvalidArgument, "Invalid arguments")
 	}
-	s.userRepo.Save(nil, u)
-	// oid, err := u.Save(nil, s.store)
-	// if err != nil {
-	// 	s.logger.Errorf("SignUp: Error saving user: %v", err)
-	// 	return nil, status.Error(codes.Internal, "An Internal error has occurred")
-	// }
-	// // Check if email exists
-	// return &pb.UserResponse{User: &pb.User{
-	// 	Id:     oid.String(),
-	// 	Object: u.Object,
-	// }}, nil
-	return nil, nil
+
+	// Hash password
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Errorf("bcrypt.GenerateFromPassword: %v", err)
+		return nil, status.Error(codes.Internal, "An Internal error has occurred")
+	}
+
+	u = &models.User{
+		Auth: models.Auth{
+			Email:    email,
+			Password: string(hash),
+		},
+		Object: "user",
+	}
+	id, err := s.userRepo.Save(nil, u, "")
+	if err != nil {
+		s.logger.Errorf("userRepo.Save: %v", err)
+		return nil, status.Error(codes.Internal, "An Internal error has occurred")
+	}
+	return &pb.UserResponse{User: &pb.User{
+		Id:     id,
+		Object: u.Object,
+	}}, nil
 }
 
 // SignIn is a gRPC handler that allows user to authenticate
