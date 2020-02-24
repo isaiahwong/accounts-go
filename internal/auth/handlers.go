@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/isaiahwong/auth-go/internal/model"
+	"github.com/isaiahwong/auth-go/internal/models"
 	"github.com/isaiahwong/auth-go/internal/util/recaptcha"
 	"github.com/isaiahwong/auth-go/internal/util/validator"
 	pb "github.com/isaiahwong/auth-go/protogen/auth/v1"
@@ -81,21 +81,23 @@ func (s *Service) SignUp(ctx context.Context, req *pb.SignUpRequest) (*pb.UserRe
 
 	// Hash password
 
-	u := model.User{
-		Auth: model.Auth{
+	u := &models.User{
+		Auth: models.Auth{
 			Email: e,
 		},
 	}
-	oid, err := u.Save(nil, s.store)
-	if err != nil {
-		s.logger.Errorf("SignUp: Error saving user: %v", err)
-		return nil, status.Error(codes.Internal, "An Internal error has occurred")
-	}
-	// Check if email exists
-	return &pb.UserResponse{User: &pb.User{
-		Id:     oid.String(),
-		Object: u.Object,
-	}}, nil
+	s.userRepo.Save(nil, u)
+	// oid, err := u.Save(nil, s.store)
+	// if err != nil {
+	// 	s.logger.Errorf("SignUp: Error saving user: %v", err)
+	// 	return nil, status.Error(codes.Internal, "An Internal error has occurred")
+	// }
+	// // Check if email exists
+	// return &pb.UserResponse{User: &pb.User{
+	// 	Id:     oid.String(),
+	// 	Object: u.Object,
+	// }}, nil
+	return nil, nil
 }
 
 // SignIn is a gRPC handler that allows user to authenticate

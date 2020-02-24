@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	"github.com/isaiahwong/auth-go/internal"
 	"github.com/isaiahwong/auth-go/internal/store"
 	"github.com/isaiahwong/auth-go/internal/util/log"
 )
@@ -20,13 +21,15 @@ type Server struct {
 	Production bool
 	listener   net.Listener
 	logger     log.Logger
-	store      *store.MongoStore
+	store      store.DataStore
 }
 
 // Serve starts gRPC server as well as other dependencies such as connect to store
 func (s *Server) Serve() error {
-	err := s.store.Connect(nil)
-	if err != nil {
+	if s.store == nil {
+		return &internal.InvalidParam{S: "Serve: requires a Datastore to start server"}
+	}
+	if err := s.store.Connect(nil); err != nil {
 		return err
 	}
 

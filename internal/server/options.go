@@ -10,7 +10,7 @@ type serverOptions struct {
 	address    string
 	production bool
 	logger     log.Logger
-	store      *store.MongoStore
+	store      store.DataStore
 }
 
 // Option is an option that can be given to a Server on construction.
@@ -54,8 +54,10 @@ func WithAppEnvironment(production bool) Option {
 	}
 }
 
-// WithMongoStore an Option which sets the store the server will use
-func WithMongoStore(s *store.MongoStore) Option {
+// WithDataStore an Option which sets the store the server will use
+// Initially the server will assist in overseeing the connection between
+// the data store
+func WithDataStore(s store.DataStore) Option {
 	return func(o *serverOptions) {
 		o.store = s
 	}

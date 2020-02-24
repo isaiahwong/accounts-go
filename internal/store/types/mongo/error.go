@@ -1,4 +1,4 @@
-package store
+package mongo
 
 type OIDTypeError struct {
 	s string

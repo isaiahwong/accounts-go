@@ -8,7 +8,7 @@ import (
 
 type serviceOption struct {
 	logger     log.Logger
-	store      *store.MongoStore
+	store      store.DataStore
 	grpcServer *grpc.Server
 	production bool
 }
@@ -35,8 +35,16 @@ func WithGrpc(g *grpc.Server) ServiceOption {
 	}
 }
 
-func SetEnvironment(p bool) ServiceOption {
+// WithStore returns a ServiceOption that sets the store the service will use
+func WithStore(store store.DataStore) ServiceOption {
 	return func(o *serviceOption) {
-		o.production = p
+		o.store = store
+	}
+}
+
+// SetEnvironment returns a ServiceOption that sets the service environment
+func SetEnvironment(production bool) ServiceOption {
+	return func(o *serviceOption) {
+		o.production = production
 	}
 }

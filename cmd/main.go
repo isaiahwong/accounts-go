@@ -3,7 +3,7 @@ package cmd
 import (
 	auth "github.com/isaiahwong/auth-go/internal/auth"
 	"github.com/isaiahwong/auth-go/internal/server"
-	"github.com/isaiahwong/auth-go/internal/store"
+	"github.com/isaiahwong/auth-go/internal/store/types/mongo"
 	"github.com/isaiahwong/auth-go/internal/util/log"
 )
 
@@ -18,15 +18,15 @@ func init() {
 	l := log.NewLogrusLogger()
 
 	// Initialize a new Store
-	m, err := store.NewMongoStore(
-		store.WithDatabase(config.DBName),
-		store.WithConnectionString(config.DBUri),
-		store.WithTimeout(config.DBTimeout),
-		store.WithAuth(store.MongoCredential{
+	m, err := mongo.NewMongoStore(
+		mongo.WithDatabase(config.DBName),
+		mongo.WithConnectionString(config.DBUri),
+		mongo.WithTimeout(config.DBTimeout),
+		mongo.WithAuth(mongo.MongoCredential{
 			Username: config.DBUser,
 			Password: config.DBPassword,
 		}),
-		store.WithHeartbeat(config.DBTimeout),
+		mongo.WithHeartbeat(config.DBTimeout),
 	)
 	if err != nil {
 		l.Fatalf("NewMongoStore: %v", err)
@@ -37,7 +37,7 @@ func init() {
 		server.WithAddress(":50051"),
 		server.WithLogger(l),
 		server.WithName("Auth Service"),
-		server.WithMongoStore(m),
+		server.WithDataStore(m),
 	)
 	s.Production = config.Production
 
@@ -49,6 +49,7 @@ func init() {
 	auth.RegisterService(
 		auth.WithLogger(l),
 		auth.WithGrpc(s.GRPCServer),
+		auth.WithStore(m),
 	)
 }
 

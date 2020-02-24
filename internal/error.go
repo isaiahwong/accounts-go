@@ -1,9 +1,9 @@
-package auth
+package internal
 
 type InvalidParam struct {
-	s string
+	S string
 }
 
 func (e *InvalidParam) Error() string {
-	return e.s
+	return e.S
 }
