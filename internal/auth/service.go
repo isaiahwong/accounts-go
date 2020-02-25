@@ -4,8 +4,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/isaiahwong/auth-go/internal"
 	"github.com/isaiahwong/auth-go/internal/store"
+	"github.com/isaiahwong/auth-go/internal/store/drivers/mongo"
 	user "github.com/isaiahwong/auth-go/internal/store/repo/user"
-	"github.com/isaiahwong/auth-go/internal/store/types/mongo"
+	"github.com/isaiahwong/auth-go/internal/util/email"
 	"github.com/isaiahwong/auth-go/internal/util/log"
 	pb "github.com/isaiahwong/auth-go/protogen/auth/v1"
 	"github.com/microcosm-cc/bluemonday"
@@ -32,6 +33,14 @@ func (svc *Service) initRepoWithMongo(s store.DataStore) error {
 	return nil
 }
 
+func (svc *Service) initValidator() {
+	svc.validate = validator.New()
+	svc.validate.RegisterValidation("emailMX", func(fl validator.FieldLevel) bool {
+		f := fl.Field().String()
+		return email.ValidateFormat(f) && email.ValidateHost(f)
+	})
+}
+
 // RegisterService takes in arguments notably grpcServer which is needed to register for
 // protobuf service
 func RegisterService(opt ...ServiceOption) error {
@@ -49,8 +58,8 @@ func RegisterService(opt ...ServiceOption) error {
 		production: opts.production,
 		logger:     opts.logger,
 		policy:     bluemonday.StrictPolicy(),
-		validate:   validator.New(),
 	}
+	svc.initValidator()
 	// Initializes repositories
 	if err := svc.initRepoWithMongo(opts.store); err != nil {
 		return err

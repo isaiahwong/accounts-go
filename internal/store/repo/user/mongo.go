@@ -2,15 +2,20 @@ package user
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/isaiahwong/auth-go/internal/models"
-	"github.com/isaiahwong/auth-go/internal/store/types/mongo"
+	mt "github.com/isaiahwong/auth-go/internal/store/drivers/mongo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	mongo "go.mongodb.org/mongo-driver/mongo"
 )
 
+// ErrOIDType defines and invalid mongo object id
+var ErrOIDType = errors.New("Invalid OID")
+
 type mongoUserRepo struct {
-	m *mongo.MongoStore
+	m *mt.MongoStore
 }
 
 func (r *mongoUserRepo) Save(ctx context.Context, u *models.User, id string) (string, error) {
@@ -29,17 +34,17 @@ func (r *mongoUserRepo) Save(ctx context.Context, u *models.User, id string) (st
 	}
 	oid, ok := res.InsertedID.(primitive.ObjectID)
 	if !ok {
-		return "nil", &mongo.OIDTypeError{}
+		return "", ErrOIDType
 	}
 
 	return oid.String(), nil
 }
 
-func (r *mongoUserRepo) Find(ctx context.Context, s interface{}, opts ...interface{}) []*models.User {
-	return nil
+func (r *mongoUserRepo) Find(ctx context.Context, s interface{}, opts ...interface{}) ([]*models.User, error) {
+	return nil, nil
 }
 
-func (r *mongoUserRepo) FindOne(ctx context.Context, s interface{}, opts ...interface{}) *models.User {
+func (r *mongoUserRepo) FindOne(ctx context.Context, s interface{}, opts ...interface{}) (*models.User, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(context.Background(), r.m.Timeout)
@@ -47,19 +52,20 @@ func (r *mongoUserRepo) FindOne(ctx context.Context, s interface{}, opts ...inte
 	}
 	coll := r.m.Client.Database(r.m.Database).Collection("user")
 	resp := coll.FindOne(ctx, s)
-	if resp == nil {
-		return nil
-	}
 	user := &models.User{}
 	err := resp.Decode(user)
-	if err != nil {
-		// TODO assert error type
-		return nil
+
+	switch err {
+	case mongo.ErrNoDocuments:
+		return nil, nil
 	}
-	return user
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 // NewMongoUserRepo returns a new Mongo Based Repo
-func NewMongoUserRepo(m *mongo.MongoStore) Repo {
+func NewMongoUserRepo(m *mt.MongoStore) Repo {
 	return &mongoUserRepo{m}
 }

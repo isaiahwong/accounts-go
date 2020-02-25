@@ -41,10 +41,7 @@ func Val(validate *validator.Validate, fields ...Field) (errors []Error) {
 			})
 		}
 	}
-	if len(errors) > 0 {
-		return
-	}
-	return nil
+	return
 }
 
 func Instance() *validator.Validate {

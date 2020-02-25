@@ -3,7 +3,7 @@ package cmd
 import (
 	auth "github.com/isaiahwong/auth-go/internal/auth"
 	"github.com/isaiahwong/auth-go/internal/server"
-	"github.com/isaiahwong/auth-go/internal/store/types/mongo"
+	"github.com/isaiahwong/auth-go/internal/store/drivers/mongo"
 	"github.com/isaiahwong/auth-go/internal/util/log"
 )
 

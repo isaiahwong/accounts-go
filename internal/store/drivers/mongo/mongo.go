@@ -10,6 +10,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+type ErrConnect struct {
+	S string
+}
+
+func (e *ErrConnect) Error() string {
+	return "Mongo Connection: " + e.S
+}
+
 // MongoStore struct wrapper
 type MongoStore struct {
 	Client   *mongo.Client
@@ -30,7 +38,7 @@ type mongoOptions struct {
 type MongoOption func(*mongoOptions, *options.ClientOptions)
 
 var defaultOptions = mongoOptions{
-	connstr:  "mongodb://localhost:27017/",
+	connstr:  "mongodb://localhost:27017",
 	database: "auth",
 	timeout:  15,
 }
@@ -127,7 +135,7 @@ func (m *MongoStore) Connect(ctx context.Context) error {
 	}
 	err := m.Client.Connect(ctx)
 	if err != nil {
-		return &connectError{fmt.Sprintf("Mongo Connection %v", err)}
+		return &ErrConnect{S: fmt.Sprint(err)}
 	}
 
 	// Test Connectivity
@@ -151,7 +159,7 @@ func (m *MongoStore) Ping() error {
 	// Test connection
 	err := m.Client.Ping(ctx, readpref.Primary())
 	if err != nil {
-		return &connectError{fmt.Sprintf("Mongo Connection %v", err)}
+		return &ErrConnect{S: fmt.Sprint(err)}
 	}
 	return nil
 }
