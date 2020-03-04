@@ -1,13 +1,12 @@
-package auth
+package accounts
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	"github.com/isaiahwong/auth-go/internal/store/mocks"
-	"github.com/isaiahwong/auth-go/internal/util/log"
-	pb "github.com/isaiahwong/auth-go/protogen/auth/v1"
+	pb "github.com/isaiahwong/accounts-go/api/accounts/v1"
+	"github.com/isaiahwong/accounts-go/internal/util/log"
+	"github.com/isaiahwong/accounts-go/tests/mocks"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -47,6 +46,17 @@ var invalidPasswords = []string{
 	"121314151617119****************&&", // 33 length too long
 }
 
+var validPasswords = []string{
+	"hello1234^",
+	"hello12345^",
+}
+
+func SetupRepo() *mocks.Repo {
+	r := new(mocks.Repo)
+	r.On("FindOne", nil, mock.Anything).Return(nil, nil)
+	return r
+}
+
 func TestSignUp(t *testing.T) {
 	validReq := &pb.SignUpRequest{
 		Email:           "isaiah@example.com",
@@ -55,13 +65,13 @@ func TestSignUp(t *testing.T) {
 		CaptchaToken:    "1234",
 		Ip:              "1234",
 	}
-	repo := new(mocks.Repo)
-	repo.On("FindOne", nil, mock.Anything).Return(nil, nil)
+	repo := SetupRepo()
 
 	svc := &Service{
-		logger:   logger,
-		policy:   bluemonday.StrictPolicy(),
-		userRepo: repo,
+		production: true,
+		logger:     logger,
+		policy:     bluemonday.StrictPolicy(),
+		userRepo:   repo,
 	}
 	svc.initValidator()
 
@@ -82,7 +92,6 @@ func TestSignUp(t *testing.T) {
 
 	t.Run("Invalid Password", func(t *testing.T) {
 		*req = *validReq
-		fmt.Println(req)
 		for _, p := range invalidPasswords {
 			req.Password = p
 			req.ConfirmPassword = p
@@ -96,4 +105,16 @@ func TestSignUp(t *testing.T) {
 		}
 	})
 
+	t.Run("Invalid Password do not match", func(t *testing.T) {
+		*req = *validReq
+		req.Password = validPasswords[0]
+		req.ConfirmPassword = validPasswords[1]
+		_, err := svc.SignUp(context.Background(), req)
+		st, ok := status.FromError(err)
+		if !ok {
+			t.Errorf("Error parsing grpc error code")
+		}
+
+		assert.Equal(t, codes.InvalidArgument, st.Code())
+	})
 }

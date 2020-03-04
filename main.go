@@ -1,6 +1,6 @@
 package main
 
-import "github.com/isaiahwong/auth-go/cmd"
+import "github.com/isaiahwong/accounts-go/cmd"
 
 func main() {
 	cmd.Execute()

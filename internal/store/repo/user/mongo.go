@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/isaiahwong/auth-go/internal/models"
-	mt "github.com/isaiahwong/auth-go/internal/store/drivers/mongo"
+	"github.com/isaiahwong/accounts-go/internal/models"
+	mt "github.com/isaiahwong/accounts-go/internal/store/drivers/mongo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	mongo "go.mongodb.org/mongo-driver/mongo"
 )
@@ -18,14 +18,13 @@ type mongoUserRepo struct {
 	m *mt.MongoStore
 }
 
-func (r *mongoUserRepo) Save(ctx context.Context, u *models.User, id string) (string, error) {
+func (r *mongoUserRepo) Save(ctx context.Context, u *models.User) (string, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(context.Background(), r.m.Timeout)
 		defer cancel()
 	}
 	coll := r.m.Client.Database(r.m.Database).Collection("user")
-	u.ID = primitive.NewObjectID()
 	u.CreatedAt = time.Now()
 	u.UpdatedAt = time.Now()
 	res, err := coll.InsertOne(ctx, u)

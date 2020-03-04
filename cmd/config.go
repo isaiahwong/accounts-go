@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/isaiahwong/auth-go/internal/util"
+	"github.com/isaiahwong/accounts-go/internal/util"
 	"github.com/joho/godotenv"
 )
 

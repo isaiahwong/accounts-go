@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net"
 	"reflect"
 
@@ -9,9 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
-	"github.com/isaiahwong/auth-go/internal"
-	"github.com/isaiahwong/auth-go/internal/store"
-	"github.com/isaiahwong/auth-go/internal/util/log"
+	"github.com/isaiahwong/accounts-go/internal/store"
+	"github.com/isaiahwong/accounts-go/internal/util/log"
 )
 
 // Server encapsulates authentication and user operations
@@ -27,7 +27,7 @@ type Server struct {
 // Serve starts gRPC server as well as other dependencies such as connect to store
 func (s *Server) Serve() error {
 	if s.store == nil {
-		return &internal.InvalidParam{S: "Serve: requires a Datastore to start server"}
+		return errors.New("Serve: requires a Datastore to start server")
 	}
 	if err := s.store.Connect(nil); err != nil {
 		return err

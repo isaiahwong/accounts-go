@@ -1,16 +1,18 @@
-package auth
+package accounts
 
 import (
-	"github.com/isaiahwong/auth-go/internal/store"
-	"github.com/isaiahwong/auth-go/internal/util/log"
+	"github.com/isaiahwong/accounts-go/internal/store"
+	"github.com/isaiahwong/accounts-go/internal/util/log"
 	"google.golang.org/grpc"
 )
 
 type serviceOption struct {
-	logger     log.Logger
-	store      store.DataStore
-	grpcServer *grpc.Server
-	production bool
+	logger        log.Logger
+	store         store.DataStore
+	grpcServer    *grpc.Server
+	disableStore  bool
+	disableServer bool
+	production    bool
 }
 
 // ServiceOption sets options
@@ -46,5 +48,17 @@ func WithStore(store store.DataStore) ServiceOption {
 func SetEnvironment(production bool) ServiceOption {
 	return func(o *serviceOption) {
 		o.production = production
+	}
+}
+
+func DisableStore(s bool) ServiceOption {
+	return func(o *serviceOption) {
+		o.disableStore = s
+	}
+}
+
+func DisableServer(s bool) ServiceOption {
+	return func(o *serviceOption) {
+		o.disableServer = s
 	}
 }

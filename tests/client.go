@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/isaiahwong/auth-go/protogen/auth/v1"
+	pb "github.com/isaiahwong/accounts-go/api/auth/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -20,7 +20,7 @@ func main() {
 	var trailer metadata.MD // variable to store header and trailer
 
 	resp, err := client.SignUp(ctx, &pb.SignUpRequest{
-		Email:           "ivanyeo@mpillow.com",
+		Email:           "sada@mpillow.com",
 		Password:        "12345678UF020|",
 		ConfirmPassword: "12345678UF020|",
 		CaptchaToken:    "123",

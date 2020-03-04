@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/isaiahwong/auth-go/internal/store"
-	"github.com/isaiahwong/auth-go/internal/util/log"
+	"github.com/isaiahwong/accounts-go/internal/store"
+	"github.com/isaiahwong/accounts-go/internal/util/log"
 )
 
 type serverOptions struct {
