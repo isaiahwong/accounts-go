@@ -11,7 +11,7 @@ import (
 // UnaryServerInterceptor returns a new unary server interceptors that checks connection to MongoDB
 func UnaryServerInterceptor(m *MongoStore) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		pe := m.Ping()
+		pe := m.Ping(nil)
 		if pe != nil {
 			// Reconnect
 			return nil, status.Error(codes.Internal, "Ping pong ping ring")

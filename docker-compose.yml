@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  store:
+    image: mongo:latest
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+
+  accounts-service:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - DB_URI=mongodb://store:27017
+      - DATABASE=accounts
+      - DB_TIMEOUT=10
+      - DB_INITIAL_TIMEOUT=3
+
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    depends_on:
+      - store
+    links: 
+      - store
+    restart: unless-stopped
+    ports:
+      - 50051:50051
+
+      

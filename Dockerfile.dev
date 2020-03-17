@@ -1,0 +1,17 @@
+FROM golang:1.13-alpine
+
+WORKDIR /accounts
+COPY go.mod . 
+COPY go.sum .
+
+# Get dependancies - will also be cached if we won't change mod/sum
+RUN go mod download
+
+# For some reason .dockerignore doesn't work.
+COPY cmd ./cmd
+COPY internal ./internal
+COPY api ./api
+COPY main.go ./main.go
+COPY .env .
+
+CMD ["go", "run", "main.go"]

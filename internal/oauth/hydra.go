@@ -12,11 +12,11 @@ import (
 )
 
 type Hydra struct {
-	hydraUrl string
+	hydraURL string
 }
 
 func (h *Hydra) get(flow string, challenge string) (*HydraResponse, error) {
-	url := fmt.Sprintf("%v/%v?=%v_challenge=%v", h.hydraUrl, flow, flow, challenge)
+	url := fmt.Sprintf("%v/%v?%v_challenge=%v", h.hydraURL, flow, flow, challenge)
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -38,7 +38,7 @@ func (h *Hydra) get(flow string, challenge string) (*HydraResponse, error) {
 		return nil, errors.New("An error while making request to hydra " + string(b))
 	}
 	r := &HydraResponse{}
-	err = json.NewDecoder(resp.Body).Decode(r)
+	err = json.Unmarshal(b, r)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (h *Hydra) get(flow string, challenge string) (*HydraResponse, error) {
 }
 
 func (h *Hydra) put(flow string, action string, challenge string, body interface{}) (*HydraRedirect, error) {
-	url := fmt.Sprintf("%v/%v/%v?=%v_challenge=%v", h.hydraUrl, flow, action, flow, challenge)
+	url := fmt.Sprintf("%v/%v/%v?%v_challenge=%v", h.hydraURL, flow, action, flow, challenge)
 	d, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (h *Hydra) put(flow string, action string, challenge string, body interface
 	}
 
 	r := &HydraRedirect{}
-	err = json.NewDecoder(resp.Body).Decode(r)
+	err = json.Unmarshal(b, r)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +121,6 @@ func NewHydraClient() *Hydra {
 	url := util.MapEnvWithDefaults("HYDRA_ADMIN_URL", "http://localhost:9000")
 	url += "/oauth2/auth/requests"
 	return &Hydra{
-		hydraUrl: url,
+		hydraURL: url,
 	}
 }

@@ -35,8 +35,26 @@ func (r *mongoUserRepo) Save(ctx context.Context, u *models.User) (string, error
 	if !ok {
 		return "", ErrOIDType
 	}
+	return oid.Hex(), nil
+}
 
-	return oid.String(), nil
+func (r *mongoUserRepo) Update(ctx context.Context, f interface{}, up interface{}) (string, error) {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), r.m.Timeout)
+		defer cancel()
+	}
+	coll := r.m.Client.Database(r.m.Database).Collection("user")
+	res, err := coll.UpdateOne(ctx, f, up)
+	if err != nil {
+		return "", err
+	}
+
+	oid, ok := res.UpsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", ErrOIDType
+	}
+	return oid.Hex(), nil
 }
 
 func (r *mongoUserRepo) Find(ctx context.Context, s interface{}, opts ...interface{}) ([]*models.User, error) {

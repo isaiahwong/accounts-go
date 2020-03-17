@@ -62,8 +62,6 @@ func TestSignUp(t *testing.T) {
 		Email:           "isaiah@example.com",
 		Password:        "12345678UF020|",
 		ConfirmPassword: "12345678UF020|",
-		CaptchaToken:    "1234",
-		Ip:              "1234",
 	}
 	repo := SetupRepo()
 

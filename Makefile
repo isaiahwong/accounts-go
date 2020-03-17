@@ -1,6 +1,6 @@
 $(shell PATH=$PATH:$GOPATH/bin)
 BUILD_ID := $(shell git rev-parse --short HEAD 2>/dev/null || echo no-commit-id)
-IMAGE_NAME := registry.gitlab.com/isaiahwong/api/auth
+IMAGE_NAME := registry.gitlab.com/isaiahwong/cluster/api/accounts
 VERSION := 0.0.1
 
 PROTO_DIR := ../../pb
@@ -49,3 +49,4 @@ genproto:
 genmocks:
 	mockery -name=DataStore -dir=./internal/store -recursive=true -output=./tests/mocks       
 	mockery -name=Repo -dir=./internal/store/repo/user -recursive=true -output=./tests/mocks        
+

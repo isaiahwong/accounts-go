@@ -30,15 +30,16 @@ import (
 // DBUser
 // DBPassword
 type EnvConfig struct {
-	AppEnv     string
-	Production bool
-	Host       string
-	Address    string
-	DBUri      string
-	DBName     string
-	DBUser     string
-	DBPassword string
-	DBTimeout  time.Duration
+	AppEnv           string
+	Production       bool
+	Host             string
+	Address          string
+	DBUri            string
+	DBName           string
+	DBUser           string
+	DBPassword       string
+	DBTimeout        time.Duration
+	DBInitialTimeout time.Duration
 }
 
 // LoadEnv loads environment variables for Application
@@ -54,17 +55,24 @@ func loadEnv() *EnvConfig {
 		fmt.Printf("Error parsing DB_TIMEOUT: %v\nWill fallback to default value", err)
 		sec = 10
 	}
-
 	dBTimeout := time.Duration(sec) * time.Second
 
+	sec, err = strconv.ParseInt(util.MapEnvWithDefaults("DB_INITIAL_TIMEOUT", "10"), 10, 64)
+	if err != nil {
+		fmt.Printf("Error parsing DB_TIMEOUT: %v\nWill fallback to default value", err)
+		sec = 10
+	}
+	initialTimeout := time.Duration(sec) * time.Second
+
 	return &EnvConfig{
-		AppEnv:     util.MapEnvWithDefaults("APP_ENV", "development"),
-		Production: util.MapEnvWithDefaults("APP_ENV", "development") == "true",
-		Address:    util.MapEnvWithDefaults("ADDRESS", "5000"),
-		DBUri:      util.MapEnvWithDefaults("DB_URI", "mongodb://localhost:27017"),
-		DBName:     util.MapEnvWithDefaults("DB_NAME", "auth"),
-		DBUser:     util.MapEnvWithDefaults("DB_USER", ""),
-		DBPassword: util.MapEnvWithDefaults("DB_PASSWORD", ""),
-		DBTimeout:  dBTimeout,
+		AppEnv:           util.MapEnvWithDefaults("APP_ENV", "development"),
+		Production:       util.MapEnvWithDefaults("APP_ENV", "development") == "production",
+		Address:          util.MapEnvWithDefaults("ADDRESS", ":50051"),
+		DBUri:            util.MapEnvWithDefaults("DB_URI", "mongodb://localhost:27017"),
+		DBName:           util.MapEnvWithDefaults("DB_NAME", "accounts"),
+		DBUser:           util.MapEnvWithDefaults("MONGO_INITDB_ROOT_USERNAME", ""),
+		DBPassword:       util.MapEnvWithDefaults("MONGO_INITDB_ROOT_PASSWORD", ""),
+		DBTimeout:        dBTimeout,
+		DBInitialTimeout: initialTimeout,
 	}
 }

@@ -22,6 +22,7 @@ func init() {
 		mongo.WithDatabase(config.DBName),
 		mongo.WithConnectionString(config.DBUri),
 		mongo.WithTimeout(config.DBTimeout),
+		mongo.WithInitialTimeout(config.DBInitialTimeout),
 		mongo.WithAuth(mongo.MongoCredential{
 			Username: config.DBUser,
 			Password: config.DBPassword,
@@ -34,7 +35,7 @@ func init() {
 
 	// Initialize a new Server
 	s, err = server.New(
-		server.WithAddress(":50051"),
+		server.WithAddress(config.Address),
 		server.WithLogger(l),
 		server.WithName("Accounts Service"),
 		server.WithDataStore(m),

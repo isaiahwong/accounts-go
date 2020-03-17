@@ -28,19 +28,21 @@ type MongoStore struct {
 
 // mongoOptions a set of mongo options declared privately
 type mongoOptions struct {
-	connstr  string
-	database string
-	auth     *options.Credential
-	timeout  time.Duration
+	connstr        string
+	database       string
+	auth           *options.Credential
+	timeout        time.Duration
+	initialTimeout time.Duration
 }
 
 // MongoOption sets options such as hostPort; parameters, etc.
 type MongoOption func(*mongoOptions, *options.ClientOptions)
 
 var defaultOptions = mongoOptions{
-	connstr:  "mongodb://localhost:27017",
-	database: "auth",
-	timeout:  15,
+	connstr:        "mongodb://localhost:27017",
+	database:       "auth",
+	timeout:        10,
+	initialTimeout: 10,
 }
 
 // MongoCredential holds auth options.
@@ -69,14 +71,21 @@ func WithDatabase(db string) MongoOption {
 	}
 }
 
-// WithTimeout specifies the timeout for an initial connection to a server.
-// If a custom Dialer is used, this method won't be set and the user is
-// responsible for setting the ConnectTimeout for connections on the dialer
-// themselves.
+// WithTimeout specifies the timeout for requests to the server.
 func WithTimeout(t time.Duration) MongoOption {
 	return func(o *mongoOptions, m *options.ClientOptions) {
 		o.timeout = t
-		m.SetConnectTimeout(1 * time.Second)
+	}
+}
+
+// WithInitialTimeout specifies the timeout for an initial connection to a server.
+// If a custom Dialer is used, this method won't be set and the user is
+// responsible for setting the ConnectTimeout for connections on the dialer
+// themselves.
+func WithInitialTimeout(t time.Duration) MongoOption {
+	return func(o *mongoOptions, m *options.ClientOptions) {
+		o.initialTimeout = t
+		m.SetConnectTimeout(t)
 	}
 }
 
@@ -130,7 +139,7 @@ func NewMongoStore(opt ...MongoOption) (*MongoStore, error) {
 func (m *MongoStore) Connect(ctx context.Context) error {
 	var cancel context.CancelFunc
 	if ctx == nil {
-		ctx, cancel = context.WithTimeout(context.Background(), m.opts.timeout)
+		ctx, cancel = context.WithTimeout(context.Background(), m.opts.initialTimeout)
 		defer cancel()
 	}
 	err := m.Client.Connect(ctx)
@@ -139,7 +148,7 @@ func (m *MongoStore) Connect(ctx context.Context) error {
 	}
 
 	// Test Connectivity
-	pe := m.Ping()
+	pe := m.Ping(&m.opts.initialTimeout)
 	if pe != nil {
 		return pe
 	}
@@ -153,8 +162,11 @@ func (m *MongoStore) Disconnect(ctx context.Context) error {
 }
 
 // Ping verifies that the client can connect to the topology.
-func (m *MongoStore) Ping() error {
-	ctx, cancel := context.WithTimeout(context.Background(), m.opts.timeout)
+func (m *MongoStore) Ping(t *time.Duration) error {
+	if t == nil {
+		t = &m.opts.timeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), *t)
 	defer cancel()
 	// Test connection
 	err := m.Client.Ping(ctx, readpref.Primary())

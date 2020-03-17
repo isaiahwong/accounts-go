@@ -22,7 +22,7 @@ type Response struct {
 func Verify(token string, ip string) (*Response, error) {
 	godotenv.Load()
 	u := util.MapEnvWithDefaults("GOOGLE_RECAPTCHA_URL", "https://www.google.com/recaptcha/api/siteverify")
-	s := util.MapEnvWithDefaults("GOOGLE_RECAPTCHA_SECRET", "")
+	s := util.MapEnvWithDefaults("GOOGLE_RECAPTCHA_SECRET", "_")
 
 	resp, err := http.Post(fmt.Sprintf("%v?secret=%v&response=%v&remoteip=%v", u, s, token, ip), "text/plain", nil)
 	if err != nil {

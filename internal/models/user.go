@@ -27,6 +27,7 @@ type Auth struct {
 
 type Session struct {
 	IP        string    `bson:"ip" json:"ip"`
+	Device    string    `bson:"device" json:"device"`
 	Timestamp time.Time `bson:"timestamp" json:"timestamp"`
 	Location  string    `bson:"location" json:"location"`
 	Lat       int32     `bson:"lat" json:"lat"`
@@ -35,11 +36,11 @@ type Session struct {
 
 // User type
 type User struct {
-	ID        primitive.ObjectID `bson:"id,omitempty" json:"id"`
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Object    string             `bson:"object" json:"object" validate:" eq=user,required" `
 	Auth      Auth               `bson:"auth" json:"auth"`
 	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
 	LoggedIn  time.Time          `bson:"logged_in" json:"logged_in"`
-	Sessions  Session            `bson:"sessions" json:"sessions"`
+	Sessions  []Session          `bson:"sessions" json:"sessions"`
 }

@@ -8,6 +8,7 @@ import (
 
 // Repo defines user repository operations
 type Repo interface {
+	Update(c context.Context, filter interface{}, update interface{}) (string, error)
 	Save(c context.Context, u *models.User) (string, error)
 	Find(c context.Context, f interface{}, opts ...interface{}) ([]*models.User, error)
 	FindOne(c context.Context, f interface{}, opts ...interface{}) (*models.User, error)

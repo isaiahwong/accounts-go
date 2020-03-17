@@ -63,8 +63,8 @@ metadata:
 data:
   DSN: "postgres://devuser:devuser123)@hydra-postgres-service.default.svc.cluster.local:5432/hydra?sslmode=disable"
   URLS_SELF_ISSUER: "http://localhost/issuer"
-  URLS_CONSENT: "http://localhost/consent"
-  URLS_LOGIN: "http://localhost/login"
-  URLS_LOGOUT: "http://localhost/logout"
-  URLS_ERROR: "http://localhost/error"
-  URLS_POST_LOGOUT_REDIRECT: "http://localhost"
+  URLS_CONSENT: "http://localhost/auth/consent"
+  URLS_LOGIN: "http://localhost/auth/login"
+  URLS_LOGOUT: "http://localhost/auth/logout"
+  URLS_ERROR: "http://localhost/auth/error"
+  URLS_POST_LOGOUT_REDIRECT: "http://localhost/auth/login"

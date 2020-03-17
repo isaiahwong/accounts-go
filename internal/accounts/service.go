@@ -27,7 +27,7 @@ type Service struct {
 	recaptchaURL    string
 	recaptchaSecret string
 	userRepo        user.Repo
-	oauthClient     *oauth.Hydra
+	oAuthClient     *oauth.Hydra
 	mailSVC         mailV1.MailServiceClient
 }
 
@@ -86,7 +86,7 @@ func RegisterService(opt ...ServiceOption) error {
 		production:  opts.production,
 		logger:      opts.logger,
 		policy:      bluemonday.StrictPolicy(),
-		oauthClient: oauth.NewHydraClient(),
+		oAuthClient: oauth.NewHydraClient(),
 	}
 	svc.initValidator()
 	svc.initServices()

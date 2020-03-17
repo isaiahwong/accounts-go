@@ -109,26 +109,25 @@ type HydraReject struct {
 	StatusCode       int    `json:"status_code"`
 }
 
+type AccessToken struct {
+	Property1 struct {
+	} `json:"property1"`
+	Property2 struct {
+	} `json:"property2"`
+}
+
+type Session struct {
+	AccessToken AccessToken       `json:"access_token"`
+	IDToken     map[string]string `json:"id_token"`
+}
+
 type HydraConsentAccept struct {
 	GrantAccessTokenAudience []string  `json:"grant_access_token_audience"`
 	GrantScope               []string  `json:"grant_scope"`
 	HandledAt                time.Time `json:"handled_at"`
 	Remember                 bool      `json:"remember"`
 	RememberFor              int       `json:"remember_for"`
-	Session                  struct {
-		AccessToken struct {
-			Property1 struct {
-			} `json:"property1"`
-			Property2 struct {
-			} `json:"property2"`
-		} `json:"access_token"`
-		IDToken struct {
-			Property1 struct {
-			} `json:"property1"`
-			Property2 struct {
-			} `json:"property2"`
-		} `json:"id_token"`
-	} `json:"session"`
+	Session                  Session   `json:"session"`
 }
 type HydraRedirect struct {
 	RedirectTo string `json:"redirect_to"`
