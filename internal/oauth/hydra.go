@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/isaiahwong/accounts-go/internal/util"
+	"github.com/isaiahwong/accounts-go/internal/common"
 )
 
 type Hydra struct {
@@ -35,7 +35,11 @@ func (h *Hydra) get(flow string, challenge string) (*HydraResponse, error) {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 302 {
-		return nil, errors.New("An error while making request to hydra " + string(b))
+		he := &HydraError{}
+		if err := json.Unmarshal(b, he); err != nil {
+			return nil, errors.New("An error while making request to hydra " + string(b))
+		}
+		return nil, he
 	}
 	r := &HydraResponse{}
 	err = json.Unmarshal(b, r)
@@ -68,7 +72,11 @@ func (h *Hydra) put(flow string, action string, challenge string, body interface
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 302 {
-		return nil, errors.New("An error while making request to hydra " + string(b))
+		he := &HydraError{}
+		if err := json.Unmarshal(b, he); err != nil {
+			return nil, errors.New("An error while making request to hydra " + string(b))
+		}
+		return nil, he
 	}
 
 	r := &HydraRedirect{}
@@ -88,7 +96,7 @@ func (h *Hydra) AcceptLogin(challenge string, body *HydraLoginAccept) (*HydraRed
 	return h.put("login", "accept", challenge, body)
 }
 
-func (h *Hydra) RejectLogin(challenge string, body *HydraReject) (*HydraRedirect, error) {
+func (h *Hydra) RejectLogin(challenge string, body *HydraError) (*HydraRedirect, error) {
 	return h.put("login", "reject", challenge, body)
 }
 
@@ -100,7 +108,7 @@ func (h *Hydra) AcceptConsent(challenge string, body *HydraConsentAccept) (*Hydr
 	return h.put("consent", "accept", challenge, body)
 }
 
-func (h *Hydra) RejectConsent(challenge string, body *HydraReject) (*HydraRedirect, error) {
+func (h *Hydra) RejectConsent(challenge string, body *HydraError) (*HydraRedirect, error) {
 	return h.put("consent", "reject", challenge, body)
 }
 
@@ -112,13 +120,13 @@ func (h *Hydra) AcceptLogout(challenge string) (*HydraRedirect, error) {
 	return h.put("logout", "accept", challenge, nil)
 }
 
-func (h *Hydra) RejectLogout(challenge string, body *HydraReject) (*HydraRedirect, error) {
+func (h *Hydra) RejectLogout(challenge string, body *HydraError) (*HydraRedirect, error) {
 	return h.put("logout", "reject", challenge, nil)
 }
 
 // NewHydraClient
 func NewHydraClient() *Hydra {
-	url := util.MapEnvWithDefaults("HYDRA_ADMIN_URL", "http://localhost:9000")
+	url := common.MapEnvWithDefaults("HYDRA_ADMIN_URL", "http://localhost:9000")
 	url += "/oauth2/auth/requests"
 	return &Hydra{
 		hydraURL: url,

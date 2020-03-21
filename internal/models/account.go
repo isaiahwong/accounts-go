@@ -34,10 +34,10 @@ type Session struct {
 	Long      int32     `bson:"long" json:"long"`
 }
 
-// User type
-type User struct {
+// Account type
+type Account struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Object    string             `bson:"object" json:"object" validate:" eq=user,required" `
+	Object    string             `bson:"object" json:"object" validate:" eq=accounts,required" `
 	Auth      Auth               `bson:"auth" json:"auth"`
 	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`

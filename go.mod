@@ -5,10 +5,9 @@ go 1.13
 require (
 	cloud.google.com/go v0.54.0 // indirect
 	github.com/go-playground/validator/v10 v10.2.0
-	github.com/golang/mock v1.4.1
 	github.com/golang/protobuf v1.3.4
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
-	github.com/isaiahwong/auth-go v0.0.0-20200225164958-d6fac09e5638
+	github.com/isaiahwong/auth-go v0.0.0-20200225164958-d6fac09e5638 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/sirupsen/logrus v1.4.2

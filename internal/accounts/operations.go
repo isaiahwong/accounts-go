@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/isaiahwong/accounts-go/internal/common/validator"
 	"github.com/isaiahwong/accounts-go/internal/models"
-	"github.com/isaiahwong/accounts-go/internal/util/validator"
+	"github.com/isaiahwong/accounts-go/internal/oauth"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc"
@@ -16,7 +17,8 @@ import (
 
 func (s *Service) returnErrors(ctx context.Context, errors []validator.Error, code codes.Code, msg string, prefix string) error {
 	if len(errors) < 0 {
-		return nil
+		s.logger.Errorf("%v: %v", prefix, "returnErrors: errors is empty")
+		return status.Error(codes.Internal, "An Internal error has occurred")
 	}
 	md := metadata.Pairs()
 	json, jerr := json.Marshal(errors)
@@ -30,8 +32,33 @@ func (s *Service) returnErrors(ctx context.Context, errors []validator.Error, co
 	return status.Error(code, msg)
 }
 
-func (s *Service) findUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	u, err := s.userRepo.FindOne(ctx, bson.M{
+func (s *Service) returnHydraError(ctx context.Context, he *oauth.HydraError, prefix string) error {
+	if he == nil {
+		s.logger.Errorf("%v: %v", prefix, "returnHydraError: HydraError is nil")
+		return status.Error(codes.Internal, "An Internal error has occurred")
+	}
+	md := metadata.Pairs()
+	json, jerr := json.Marshal(he)
+	if jerr != nil {
+		s.logger.Errorf("%v: %v", prefix, jerr)
+		return status.Error(codes.Internal, "An Internal error has occurred")
+	}
+	s.logger.Warnf("%v: %v", prefix, string(json))
+	md.Append("errors-bin", string(json))
+	grpc.SetTrailer(ctx, md)
+
+	switch he.StatusCode {
+	case 409:
+		return status.Error(codes.AlreadyExists, he.ErrorDescription)
+	case 404:
+		return status.Error(codes.NotFound, he.ErrorDescription)
+	default:
+		return status.Error(codes.Internal, "An Internal error has occurred")
+	}
+}
+
+func (s *Service) findAccountByEmail(ctx context.Context, email string) (*models.Account, error) {
+	u, err := s.accountsRepo.FindOne(ctx, bson.M{
 		"$or": []interface{}{
 			bson.M{"auth.email": email},
 		},
@@ -42,12 +69,12 @@ func (s *Service) findUserByEmail(ctx context.Context, email string) (*models.Us
 	return u, nil
 }
 
-func (s *Service) findUserByID(ctx context.Context, id string) (*models.User, error) {
+func (s *Service) findAccountByID(ctx context.Context, id string) (*models.Account, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
-	u, err := s.userRepo.FindOne(ctx, bson.M{"_id": oid})
+	u, err := s.accountsRepo.FindOne(ctx, bson.M{"_id": oid})
 	if err != nil {
 		return nil, err
 	}

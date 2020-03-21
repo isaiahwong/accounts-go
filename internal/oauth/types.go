@@ -46,20 +46,20 @@ type HydraResponse struct {
 		LogoURI  string `json:"logo_uri"`
 		Metadata struct {
 		} `json:"metadata"`
-		Owner                     string    `json:"owner"`
-		PolicyURI                 string    `json:"policy_uri"`
-		PostLogoutRedirectUris    []string  `json:"post_logout_redirect_uris"`
-		RedirectUris              []string  `json:"redirect_uris"`
-		RequestObjectSigningAlg   string    `json:"request_object_signing_alg"`
-		RequestUris               []string  `json:"request_uris"`
-		ResponseTypes             []string  `json:"response_types"`
-		Scope                     string    `json:"scope"`
-		SectorIdentifierURI       string    `json:"sector_identifier_uri"`
-		SubjectType               string    `json:"subject_type"`
-		TokenEndpointAuthMethod   string    `json:"token_endpoint_auth_method"`
-		TosURI                    string    `json:"tos_uri"`
-		UpdatedAt                 time.Time `json:"updated_at"`
-		UserinfoSignedResponseAlg string    `json:"userinfo_signed_response_alg"`
+		Owner                        string    `json:"owner"`
+		PolicyURI                    string    `json:"policy_uri"`
+		PostLogoutRedirectUris       []string  `json:"post_logout_redirect_uris"`
+		RedirectUris                 []string  `json:"redirect_uris"`
+		RequestObjectSigningAlg      string    `json:"request_object_signing_alg"`
+		RequestUris                  []string  `json:"request_uris"`
+		ResponseTypes                []string  `json:"response_types"`
+		Scope                        string    `json:"scope"`
+		SectorIdentifierURI          string    `json:"sector_identifier_uri"`
+		SubjectType                  string    `json:"subject_type"`
+		TokenEndpointAuthMethod      string    `json:"token_endpoint_auth_method"`
+		TosURI                       string    `json:"tos_uri"`
+		UpdatedAt                    time.Time `json:"updated_at"`
+		AccountinfoSignedResponseAlg string    `json:"userinfo_signed_response_alg"`
 	} `json:"client"`
 	Context struct {
 		Property1 []byte `json:"property1"`
@@ -101,12 +101,16 @@ type HydraLoginAccept struct {
 	Subject                string `json:"subject"`
 }
 
-type HydraReject struct {
-	Error            string `json:"error"`
+type HydraError struct {
+	ErrorName        string `json:"error"`
 	ErrorDebug       string `json:"error_debug"`
 	ErrorDescription string `json:"error_description"`
 	ErrorHint        string `json:"error_hint"`
 	StatusCode       int    `json:"status_code"`
+}
+
+func (h *HydraError) Error() string {
+	return h.ErrorName
 }
 
 type AccessToken struct {

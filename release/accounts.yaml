@@ -16,7 +16,7 @@ metadata:
 spec:
   ports:
   - name: grpc
-    port: 5000
+    port: 50051
     targetPort: accounts-port
   selector: 
     app: accounts
@@ -29,9 +29,9 @@ kind: ConfigMap
 metadata:
   name: accounts-env-configmap
 data:
-  APP_ENV: "production"
+  NODE_ENV: "production"
   MAINTENANCE_MODE: "false"
-  ADDRESS: ":5000"
+  ADDRESS: ":50051"
   
   # Logging
   ENABLE_STACKDRIVER: "false"
@@ -52,11 +52,7 @@ data:
 
   # Recaptcha
   GOOGLE_RECAPTCHA_URL: "https://www.google.com/recaptcha/api/siteverify"
-  GRPC_TRACE: "all"
-  GRPC_VERBOSITY: "DEBUG"
 
-  # Hydra
-  HYDRA_ADMIN_URL: "http://hydra-service.default.svc.cluster.local:9001"
 ---
 
 apiVersion: apps/v1
@@ -79,7 +75,7 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
           - name: accounts-port
-            containerPort: 5000
+            containerPort: 50051
 
           # resources:
           #   requests:

@@ -40,13 +40,13 @@ gen-manifest-release:
 	./tools/gen-manifest.sh gen-cert --release true
 
 genproto:
-	if [ ! -d "api" ]; then \
-			mkdir api; \
+	if [ ! -d "protogen" ]; then \
+			mkdir protogen; \
 	fi
 
-	protoc -I./proto/api -I./proto/third_party/googleapis --go_out=plugins=grpc:./api ./proto/api/accounts/v1/*.proto
+	protoc -I./proto/api -I./proto/third_party/googleapis --go_out=plugins=grpc:./protogen ./proto/api/accounts/v1/*.proto
 
 genmocks:
 	mockery -name=DataStore -dir=./internal/store -recursive=true -output=./tests/mocks       
-	mockery -name=Repo -dir=./internal/store/repo/user -recursive=true -output=./tests/mocks        
+	mockery -name=Repo -dir=./internal/store/repo/accounts -recursive=true -output=./tests/mocks        
 

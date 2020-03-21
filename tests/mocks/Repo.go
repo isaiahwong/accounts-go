@@ -12,18 +12,18 @@ type Repo struct {
 }
 
 // Find provides a mock function with given fields: c, f, opts
-func (_m *Repo) Find(c context.Context, f interface{}, opts ...interface{}) ([]*models.User, error) {
+func (_m *Repo) Find(c context.Context, f interface{}, opts ...interface{}) ([]*models.Account, error) {
 	var _ca []interface{}
 	_ca = append(_ca, c, f)
 	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
-	var r0 []*models.User
-	if rf, ok := ret.Get(0).(func(context.Context, interface{}, ...interface{}) []*models.User); ok {
+	var r0 []*models.Account
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}, ...interface{}) []*models.Account); ok {
 		r0 = rf(c, f, opts...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*models.User)
+			r0 = ret.Get(0).([]*models.Account)
 		}
 	}
 
@@ -38,18 +38,18 @@ func (_m *Repo) Find(c context.Context, f interface{}, opts ...interface{}) ([]*
 }
 
 // FindOne provides a mock function with given fields: c, f, opts
-func (_m *Repo) FindOne(c context.Context, f interface{}, opts ...interface{}) (*models.User, error) {
+func (_m *Repo) FindOne(c context.Context, f interface{}, opts ...interface{}) (*models.Account, error) {
 	var _ca []interface{}
 	_ca = append(_ca, c, f)
 	_ca = append(_ca, opts...)
 	ret := _m.Called(_ca...)
 
-	var r0 *models.User
-	if rf, ok := ret.Get(0).(func(context.Context, interface{}, ...interface{}) *models.User); ok {
+	var r0 *models.Account
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}, ...interface{}) *models.Account); ok {
 		r0 = rf(c, f, opts...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*models.User)
+			r0 = ret.Get(0).(*models.Account)
 		}
 	}
 
@@ -64,18 +64,18 @@ func (_m *Repo) FindOne(c context.Context, f interface{}, opts ...interface{}) (
 }
 
 // Save provides a mock function with given fields: c, u
-func (_m *Repo) Save(c context.Context, u *models.User) (string, error) {
+func (_m *Repo) Save(c context.Context, u *models.Account) (string, error) {
 	ret := _m.Called(c, u)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *models.User) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *models.Account) string); ok {
 		r0 = rf(c, u)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *models.User) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *models.Account) error); ok {
 		r1 = rf(c, u)
 	} else {
 		r1 = ret.Error(1)
@@ -85,14 +85,14 @@ func (_m *Repo) Save(c context.Context, u *models.User) (string, error) {
 }
 
 // Update provides a mock function with given fields: c, filter, update
-func (_m *Repo) Update(c context.Context, filter interface{}, update interface{}) (string, error) {
+func (_m *Repo) Update(c context.Context, filter interface{}, update interface{}) (int, error) {
 	ret := _m.Called(c, filter, update)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, interface{}, interface{}) string); ok {
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}, interface{}) int); ok {
 		r0 = rf(c, filter, update)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(int)
 	}
 
 	var r1 error

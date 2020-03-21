@@ -30,18 +30,14 @@ spec:
       labels:
         component: hydra
     spec:
-      # initContainers:
-      # - name: hydra-sql-migration
-      #   image: oryd/hydra:v1.3.2
-      #   command: ['hydra', 'migrate', 'sql', '--yes' , '$(DSN)']
-      #   envFrom:
-      #     - secretRef:
-      #         name: accounts-env-secrets
+      initContainers:
+      - name: hydra-sql-migration
+        image: oryd/hydra:v1.2.3
+        command: ['hydra', 'migrate', 'sql', '--yes' , 'postgres://devuser:devuser123)@hydra-postgres-service.default.svc.cluster.local:5432/hydra?sslmode=disable']
       containers:
         - name: hydra
-          image: oryd/hydra:v1.3.2-alpine
-          command: ["/bin/sh","-c"]
-          args: ["hydra migrate sql --yes $(DSN) && hydra serve all --dangerous-force-http"]
+          image: oryd/hydra:v1.2.3
+          command: ['hydra', 'serve', all, '--dangerous-force-http']
           ports:
             - name: public-port
               containerPort: 4444
@@ -61,9 +57,9 @@ metadata:
   name: hydra-config
   namespace: default
 data:
-  URLS_SELF_ISSUER: "http://127.0.0.1/oauth2/issuer"
-  URLS_CONSENT: "http://127.0.0.1/auth/consent"
-  URLS_LOGIN: "http://127.0.0.1/auth/login"
-  URLS_LOGOUT: "http://127.0.0.1/auth/logout"
-  URLS_ERROR: "http://127.0.0.1/auth/notfound"
-  URLS_POST_LOGOUT_REDIRECT: "http://127.0.0.1/auth/logout"
+  URLS_SELF_ISSUER: "https://accounts.isaiahwong.dev/issuer"
+  URLS_CONSENT: "https://accounts.isaiahwong.dev/auth/consent"
+  URLS_LOGIN: "https://accounts.isaiahwong.dev/auth/login"
+  URLS_LOGOUT: "https://accounts.isaiahwong.dev/auth/logout"
+  URLS_ERROR: "https://accounts.isaiahwong.dev/notfound"
+  URLS_POST_LOGOUT_REDIRECT: "https://accounts.isaiahwong.dev/auth/logout"

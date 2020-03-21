@@ -10,11 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	"github.com/isaiahwong/accounts-go/internal/common/log"
 	"github.com/isaiahwong/accounts-go/internal/store"
-	"github.com/isaiahwong/accounts-go/internal/util/log"
 )
 
-// Server encapsulates authentication and user operations
+// Server encapsulates authentication and account operations
 type Server struct {
 	GRPCServer *grpc.Server
 	Name       string

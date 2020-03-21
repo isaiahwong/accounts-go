@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/isaiahwong/accounts-go/internal/util"
+	"github.com/isaiahwong/accounts-go/internal/common"
 	"github.com/joho/godotenv"
 )
 
@@ -21,8 +21,8 @@ type Response struct {
 // Verify sends a request to reCAPTCHA to verify client token
 func Verify(token string, ip string) (*Response, error) {
 	godotenv.Load()
-	u := util.MapEnvWithDefaults("GOOGLE_RECAPTCHA_URL", "https://www.google.com/recaptcha/api/siteverify")
-	s := util.MapEnvWithDefaults("GOOGLE_RECAPTCHA_SECRET", "_")
+	u := common.MapEnvWithDefaults("GOOGLE_RECAPTCHA_URL", "https://www.google.com/recaptcha/api/siteverify")
+	s := common.MapEnvWithDefaults("GOOGLE_RECAPTCHA_SECRET", "_")
 
 	resp, err := http.Post(fmt.Sprintf("%v?secret=%v&response=%v&remoteip=%v", u, s, token, ip), "text/plain", nil)
 	if err != nil {

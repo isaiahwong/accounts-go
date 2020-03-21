@@ -7,13 +7,13 @@ import (
 	accountsV1 "github.com/isaiahwong/accounts-go/api/accounts/v1"
 	"github.com/isaiahwong/accounts-go/api/client"
 	mailV1 "github.com/isaiahwong/accounts-go/api/mail/v1"
+	"github.com/isaiahwong/accounts-go/internal/common"
+	"github.com/isaiahwong/accounts-go/internal/common/email"
+	"github.com/isaiahwong/accounts-go/internal/common/log"
 	"github.com/isaiahwong/accounts-go/internal/oauth"
 	"github.com/isaiahwong/accounts-go/internal/store"
 	"github.com/isaiahwong/accounts-go/internal/store/drivers/mongo"
-	user "github.com/isaiahwong/accounts-go/internal/store/repo/user"
-	"github.com/isaiahwong/accounts-go/internal/util"
-	"github.com/isaiahwong/accounts-go/internal/util/email"
-	"github.com/isaiahwong/accounts-go/internal/util/log"
+	accounts "github.com/isaiahwong/accounts-go/internal/store/repo/accounts"
 	"github.com/microcosm-cc/bluemonday"
 )
 
@@ -26,7 +26,7 @@ type Service struct {
 	validate        *validator.Validate
 	recaptchaURL    string
 	recaptchaSecret string
-	userRepo        user.Repo
+	accountsRepo    accounts.Repo
 	oAuthClient     *oauth.Hydra
 	mailSVC         mailV1.MailServiceClient
 }
@@ -36,7 +36,7 @@ func (svc *Service) initRepoWithMongo(s store.DataStore) error {
 	if !ok {
 		return errors.New("Invalid Type. Only MongoStore is supported at this time")
 	}
-	svc.userRepo = user.NewMongoUserRepo(m)
+	svc.accountsRepo = accounts.NewMongoAccountsRepo(m)
 	return nil
 }
 
@@ -56,7 +56,7 @@ func (svc *Service) initValidator() {
 
 func (svc *Service) initServices() error {
 	mailSVC, err := mailV1.NewMailClient(
-		client.WithAddress(util.MapEnvWithDefaults("MAIL_SERVICE", ":50051")),
+		client.WithAddress(common.MapEnvWithDefaults("MAIL_SERVICE", ":50051")),
 	)
 	if err != nil {
 		return err

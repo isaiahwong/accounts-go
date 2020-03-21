@@ -4,13 +4,14 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Error stores error details
+// Field stores error details
 type Field struct {
-	Param      string
-	Message    string
-	Value      interface{}
-	OtherValue interface{}
-	Tag        string
+	Param          string
+	Message        string
+	Value          interface{}
+	OtherValue     interface{}
+	Tag            string
+	OmitParamValue bool
 }
 
 type Error struct {
@@ -32,13 +33,18 @@ func Val(validate *validator.Validate, fields ...Field) (errors []Error) {
 			err = validate.Var(field.Value, field.Tag)
 		}
 
+		e := Error{
+			Param:   field.Param,
+			Message: field.Message,
+		}
+
+		if !field.OmitParamValue {
+			e.Value = field.Value
+		}
+
 		if err != nil {
 			field.Tag = ""
-			errors = append(errors, Error{
-				field.Param,
-				field.Message,
-				field.Value,
-			})
+			errors = append(errors, e)
 		}
 	}
 	return

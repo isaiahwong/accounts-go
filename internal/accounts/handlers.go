@@ -7,11 +7,11 @@ import (
 	"time"
 
 	accountsV1 "github.com/isaiahwong/accounts-go/api/accounts/v1"
+	"github.com/isaiahwong/accounts-go/internal/common"
+	"github.com/isaiahwong/accounts-go/internal/common/recaptcha"
+	"github.com/isaiahwong/accounts-go/internal/common/validator"
 	"github.com/isaiahwong/accounts-go/internal/models"
 	"github.com/isaiahwong/accounts-go/internal/oauth"
-	"github.com/isaiahwong/accounts-go/internal/util"
-	"github.com/isaiahwong/accounts-go/internal/util/recaptcha"
-	"github.com/isaiahwong/accounts-go/internal/util/validator"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
@@ -19,8 +19,6 @@ import (
 )
 
 // Headers Enum types
-type Headers string
-
 const (
 	XForwardedFor    = "x-forwarded-for"
 	CaptchaResponse  = "captcha-response"
@@ -31,8 +29,8 @@ const (
 func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (*accountsV1.HydraResponse, error) {
 	api := "LoginWithChallenge"
 
-	challenge := util.GetMetadataValue(ctx, LoginChallenge)
-	ip := util.GetMetadataValue(ctx, XForwardedFor)
+	challenge := common.GetMetadataValue(ctx, LoginChallenge)
+	ip := common.GetMetadataValue(ctx, XForwardedFor)
 
 	errors := validator.Val(
 		s.validate,
@@ -60,6 +58,10 @@ func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (
 	resp, err := s.oAuthClient.Login(challenge)
 	if err != nil {
 		s.logger.Errorf("%v: %v", api, err)
+		// Cast  to hydra error
+		if he, ok := err.(*oauth.HydraError); ok {
+			return nil, s.returnHydraError(ctx, he, api)
+		}
 		return nil, status.Error(codes.Internal, "An Internal error has occurred")
 	}
 
@@ -70,27 +72,30 @@ func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (
 		Subject:    resp.Subject,
 		Skip:       resp.Skip,
 	}
-
-	if resp.Skip {
-		r, err := s.oAuthClient.AcceptLogin(challenge, &oauth.HydraLoginAccept{
-			Subject: resp.Subject,
-		})
-		if err != nil {
-			s.logger.Errorf("%v: %v", api, err)
-			return nil, status.Error(codes.Internal, "An Internal error has occurred")
-		}
-		hr.RedirectTo = r.RedirectTo
+	if !resp.Skip {
 		return hr, nil
 	}
 
+	r, err := s.oAuthClient.AcceptLogin(challenge, &oauth.HydraLoginAccept{
+		Subject: resp.Subject,
+	})
+	if err != nil {
+		s.logger.Errorf("%v: %v", api, err)
+		// Cast  to hydra error
+		if he, ok := err.(*oauth.HydraError); ok {
+			return nil, s.returnHydraError(ctx, he, api)
+		}
+		return nil, status.Error(codes.Internal, "An Internal error has occurred")
+	}
+	hr.RedirectTo = r.RedirectTo
 	return hr, nil
 }
 
 func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empty) (*accountsV1.RedirectResponse, error) {
 	api := "ConsentWithChallenge"
 	ie := status.Error(codes.Internal, "An Internal error has occurred")
-	challenge := util.GetMetadataValue(ctx, ConsentChallenge)
-	ip := util.GetMetadataValue(ctx, XForwardedFor)
+	challenge := common.GetMetadataValue(ctx, ConsentChallenge)
+	ip := common.GetMetadataValue(ctx, XForwardedFor)
 
 	errors := validator.Val(
 		s.validate,
@@ -120,21 +125,19 @@ func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empt
 		return nil, ie
 	}
 
-	fmt.Println("ConsentWithChallenge: ", resp.Subject)
-
-	// Retrieve user
-	u, err := s.findUserByID(ctx, resp.Subject)
+	// Retrieve account
+	u, err := s.findAccountByID(ctx, resp.Subject)
 	if err != nil {
 		s.logger.Errorf("%v: %v", api, err)
 		return nil, ie
 	}
 	if u == nil {
 		// Invalidate
-		s.logger.Errorf("%v: No such user initiated consent request", api)
+		s.logger.Errorf("%v: No such account initiated consent request", api)
 		return nil, ie
 	}
 
-	// Accept the scope for the users as we're authenticating internally
+	// Accept the scope for the accounts as we're authenticating internally
 	r, err := s.oAuthClient.AcceptConsent(challenge, &oauth.HydraConsentAccept{
 		GrantScope:               resp.RequestedScope,
 		GrantAccessTokenAudience: resp.RequestedAccessTokenAudience,
@@ -175,13 +178,13 @@ func (s *Service) IsAuthenticated(ctx context.Context, in *accountsV1.Empty) (*a
 	return nil, nil
 }
 
-// SignUp is a gRPC handler allows user to register
+// SignUp is a gRPC handler allows account to register
 func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*accountsV1.RedirectResponse, error) {
 	api := "SignUp"
 
-	ip := util.GetMetadataValue(ctx, XForwardedFor)
-	captchaResponse := util.GetMetadataValue(ctx, CaptchaResponse)
-	challenge := util.GetMetadataValue(ctx, LoginChallenge)
+	ip := common.GetMetadataValue(ctx, XForwardedFor)
+	captchaResponse := common.GetMetadataValue(ctx, CaptchaResponse)
+	challenge := common.GetMetadataValue(ctx, LoginChallenge)
 	email := strings.ToLower(strings.TrimSpace(req.GetEmail()))
 	firstname := req.GetFirstName()
 	lastname := req.GetLastName()
@@ -258,12 +261,12 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 	}
 
 	// Check if email exists
-	u, err := s.findUserByEmail(nil, email)
+	u, err := s.findAccountByEmail(nil, email)
 	if err != nil {
 		s.logger.Errorf("%v: %v", api, err)
 		return nil, status.Error(codes.Internal, "An Internal error has occurred")
 	}
-	// Reject is user exists
+	// Reject is account exists
 	if u != nil {
 		return nil, s.returnErrors(ctx, []validator.Error{
 			{
@@ -281,8 +284,8 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 		return nil, status.Error(codes.Internal, "An Internal error has occurred")
 	}
 
-	// Build User model
-	u = &models.User{
+	// Build Account model
+	u = &models.Account{
 		Auth: models.Auth{
 			Email:     email,
 			Password:  string(hash),
@@ -296,11 +299,11 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 				Timestamp: time.Now(),
 			},
 		},
-		Object: "user",
+		Object: "account",
 	}
-	id, err := s.userRepo.Save(nil, u)
+	id, err := s.accountsRepo.Save(nil, u)
 	if err != nil {
-		s.logger.Errorf("%v: user saving: %v", api, err)
+		s.logger.Errorf("%v: account saving: %v", api, err)
 		return nil, status.Error(codes.Internal, "An Internal error has occurred")
 	}
 
@@ -318,14 +321,14 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 	return &accountsV1.RedirectResponse{RedirectTo: r.RedirectTo}, nil
 }
 
-// Authenticate is a gRPC handler that allows user to authenticate
+// Authenticate is a gRPC handler that allows account to authenticate
 func (s *Service) Authenticate(ctx context.Context, req *accountsV1.AuthenticateRequest) (*accountsV1.RedirectResponse, error) {
 	api := "Authenticate"
 
-	ip := util.GetMetadataValue(ctx, "x-forwarded-for")
-	captchaResponse := util.GetMetadataValue(ctx, "captcha-response")
+	ip := common.GetMetadataValue(ctx, "x-forwarded-for")
+	captchaResponse := common.GetMetadataValue(ctx, "captcha-response")
 
-	challenge := util.GetMetadataValue(ctx, LoginChallenge)
+	challenge := common.GetMetadataValue(ctx, LoginChallenge)
 	email := strings.ToLower(strings.TrimSpace(req.GetEmail()))
 	password := strings.TrimSpace(req.GetPassword())
 
@@ -338,9 +341,11 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 			Tag:     "required,email,emailMX,max=64",
 		},
 		validator.Field{
-			Param:   "password",
-			Message: "Wrong email or password",
-			Tag:     "required",
+			Param:          "password",
+			Message:        "Wrong email or password",
+			Value:          password,
+			Tag:            "required",
+			OmitParamValue: true,
 		},
 		validator.Field{
 			Param:   "captcha-response",
@@ -372,8 +377,8 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 		}
 	}
 
-	// Retrieve user
-	u, err := s.findUserByEmail(nil, email)
+	// Retrieve account
+	u, err := s.findAccountByEmail(nil, email)
 	if err != nil {
 		s.logger.Errorf("%v: %v", api, err)
 		return nil, status.Error(codes.Internal, "An Internal error has occurred")
@@ -387,6 +392,7 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 			},
 		}, codes.PermissionDenied, "Wrong email or password", api)
 	}
+
 	// Add time constant for comparing hash
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Auth.Password), []byte(password)); err != nil {
 		return nil, s.returnErrors(ctx, []validator.Error{
@@ -396,8 +402,6 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 			},
 		}, codes.PermissionDenied, "Wrong email or password", api)
 	}
-
-	fmt.Println("Authenticate: ", u)
 
 	// Authenticate via Hydra
 	r, err := s.oAuthClient.AcceptLogin(challenge, &oauth.HydraLoginAccept{
@@ -412,13 +416,14 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 
 	// Add Device Session
 	u.LoggedIn = time.Now()
-	_, err = s.userRepo.Update(
+	_, err = s.accountsRepo.Update(
 		nil,
-		bson.M{"_id": u.ID.Hex()},
+		bson.M{"_id": u.ID},
 		bson.M{
 			"$set": bson.M{
-				"updated_at": time.Now(),
-				"logged_in":  time.Now(),
+				"auth.first_name": "Edited",
+				"updated_at":      time.Now(),
+				"logged_in":       time.Now(),
 			},
 		},
 	)
@@ -434,8 +439,8 @@ func (s *Service) EmailExists(ctx context.Context, req *accountsV1.EmailExistsRe
 	api := "EmailExists"
 
 	email := strings.ToLower(strings.TrimSpace(req.GetEmail()))
-	ip := util.GetMetadataValue(ctx, "x-forwarded-for")
-	captchaResponse := util.GetMetadataValue(ctx, "captcha-response")
+	ip := common.GetMetadataValue(ctx, "x-forwarded-for")
+	captchaResponse := common.GetMetadataValue(ctx, "captcha-response")
 
 	errors := validator.Val(
 		s.validate,
@@ -475,7 +480,7 @@ func (s *Service) EmailExists(ctx context.Context, req *accountsV1.EmailExistsRe
 	}
 
 	// Check if email exists
-	u, err := s.findUserByEmail(nil, email)
+	u, err := s.findAccountByEmail(nil, email)
 	if err != nil {
 		s.logger.Errorf("%v: %v", api, err)
 		return nil, status.Error(codes.Internal, "An Internal error has occurred")

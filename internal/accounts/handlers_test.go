@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	pb "github.com/isaiahwong/accounts-go/api/accounts/v1"
-	"github.com/isaiahwong/accounts-go/internal/util/log"
+	"github.com/isaiahwong/accounts-go/internal/common/log"
 	"github.com/isaiahwong/accounts-go/tests/mocks"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sirupsen/logrus"
@@ -66,10 +66,10 @@ func TestSignUp(t *testing.T) {
 	repo := SetupRepo()
 
 	svc := &Service{
-		production: true,
-		logger:     logger,
-		policy:     bluemonday.StrictPolicy(),
-		userRepo:   repo,
+		production:   true,
+		logger:       logger,
+		policy:       bluemonday.StrictPolicy(),
+		accountsRepo: repo,
 	}
 	svc.initValidator()
 

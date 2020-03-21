@@ -83,3 +83,5 @@ yarn-error.log*
 release/cert/
 release/cert-manager/
 release/*secrets*.yaml
+
+secrets*.yaml

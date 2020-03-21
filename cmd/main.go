@@ -2,9 +2,9 @@ package cmd
 
 import (
 	accounts "github.com/isaiahwong/accounts-go/internal/accounts"
+	"github.com/isaiahwong/accounts-go/internal/common/log"
 	"github.com/isaiahwong/accounts-go/internal/server"
 	"github.com/isaiahwong/accounts-go/internal/store/drivers/mongo"
-	"github.com/isaiahwong/accounts-go/internal/util/log"
 )
 
 var s *server.Server

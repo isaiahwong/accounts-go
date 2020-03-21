@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/isaiahwong/accounts-go/internal/util"
+	"github.com/isaiahwong/accounts-go/internal/common"
 	"github.com/joho/godotenv"
 )
 
@@ -46,18 +46,18 @@ type EnvConfig struct {
 func loadEnv() *EnvConfig {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Printf(".env not loaded: %v", err)
+		fmt.Printf(".env not loaded: %v\n", err)
 	}
 
 	// Convert to int
-	sec, err := strconv.ParseInt(util.MapEnvWithDefaults("DB_TIMEOUT", "10"), 10, 64)
+	sec, err := strconv.ParseInt(common.MapEnvWithDefaults("DB_TIMEOUT", "10"), 10, 64)
 	if err != nil {
 		fmt.Printf("Error parsing DB_TIMEOUT: %v\nWill fallback to default value", err)
 		sec = 10
 	}
 	dBTimeout := time.Duration(sec) * time.Second
 
-	sec, err = strconv.ParseInt(util.MapEnvWithDefaults("DB_INITIAL_TIMEOUT", "10"), 10, 64)
+	sec, err = strconv.ParseInt(common.MapEnvWithDefaults("DB_INITIAL_TIMEOUT", "10"), 10, 64)
 	if err != nil {
 		fmt.Printf("Error parsing DB_TIMEOUT: %v\nWill fallback to default value", err)
 		sec = 10
@@ -65,13 +65,13 @@ func loadEnv() *EnvConfig {
 	initialTimeout := time.Duration(sec) * time.Second
 
 	return &EnvConfig{
-		AppEnv:           util.MapEnvWithDefaults("APP_ENV", "development"),
-		Production:       util.MapEnvWithDefaults("APP_ENV", "development") == "production",
-		Address:          util.MapEnvWithDefaults("ADDRESS", ":50051"),
-		DBUri:            util.MapEnvWithDefaults("DB_URI", "mongodb://localhost:27017"),
-		DBName:           util.MapEnvWithDefaults("DB_NAME", "accounts"),
-		DBUser:           util.MapEnvWithDefaults("MONGO_INITDB_ROOT_USERNAME", ""),
-		DBPassword:       util.MapEnvWithDefaults("MONGO_INITDB_ROOT_PASSWORD", ""),
+		AppEnv:           common.MapEnvWithDefaults("APP_ENV", "development"),
+		Production:       common.MapEnvWithDefaults("APP_ENV", "development") == "production",
+		Address:          common.MapEnvWithDefaults("ADDRESS", ":50051"),
+		DBUri:            common.MapEnvWithDefaults("DB_URI", "mongodb://localhost:27017"),
+		DBName:           common.MapEnvWithDefaults("DB_NAME", "accounts"),
+		DBUser:           common.MapEnvWithDefaults("MONGO_INITDB_ROOT_USERNAME", ""),
+		DBPassword:       common.MapEnvWithDefaults("MONGO_INITDB_ROOT_PASSWORD", ""),
 		DBTimeout:        dBTimeout,
 		DBInitialTimeout: initialTimeout,
 	}
