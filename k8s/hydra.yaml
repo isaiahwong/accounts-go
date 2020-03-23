@@ -62,8 +62,8 @@ metadata:
   namespace: default
 data:
   URLS_SELF_ISSUER: "http://127.0.0.1/issuer"
-  URLS_CONSENT: "http://127.0.0.1/auth/consent"
-  URLS_LOGIN: "http://127.0.0.1/auth/login"
+  URLS_CONSENT: "http://127.0.0.1/auth/consent/challenge"
+  URLS_LOGIN: "http://127.0.0.1/auth/login/challenge"
   URLS_LOGOUT: "http://127.0.0.1/auth/logout"
   URLS_ERROR: "http://127.0.0.1/auth/notfound"
   URLS_POST_LOGOUT_REDIRECT: "http://127.0.0.1/auth/logout"
