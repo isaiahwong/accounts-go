@@ -77,27 +77,23 @@ spec:
           - name: accounts-port
             containerPort: 50051
 
-          # resources:
-          #   requests:
-          #     cpu: 50m
-          #     memory: 64Mi
-          #   limits:
-          #     cpu: 80m
-          #     memory: 128Mi
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 80m
+              memory: 128Mi
 
-          # readinessProbe:
-          #   httpGet:
-          #     path: /hz
-          #     port: 5000
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 4
-          
-          # livenessProbe:
-          #   httpGet:
-          #     path: /hz
-          #     port: 5000
-          #   initialDelaySeconds: 60
-          #   periodSeconds: 120
+          readinessProbe:
+            exec:
+              command: ["go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
+            initialDelaySeconds: 5
+
+          livenessProbe:
+            exec:
+              command: ["/go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
+            initialDelaySeconds: 60
             
           envFrom:
           - configMapRef:

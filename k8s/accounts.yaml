@@ -89,19 +89,15 @@ spec:
           #     cpu: 80m
           #     memory: 128Mi
 
-          # readinessProbe:
-          #   httpGet:
-          #     path: /hz
-          #     port: 5000
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 4
-          
-          # livenessProbe:
-          #   httpGet:
-          #     path: /hz
-          #     port: 5000
-          #   initialDelaySeconds: 60
-          #   periodSeconds: 120
+          readinessProbe:
+            exec:
+              command: ["go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
+            initialDelaySeconds: 5
+
+          livenessProbe:
+            exec:
+              command: ["/go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
+            initialDelaySeconds: 10
             
           envFrom:
           - configMapRef:
@@ -111,3 +107,4 @@ spec:
               
       imagePullSecrets:
       - name: gitlab-auth
+

@@ -63,3 +63,4 @@ data:
   URLS_LOGOUT: "https://accounts.isaiahwong.dev/auth/logout"
   URLS_ERROR: "https://accounts.isaiahwong.dev/notfound"
   URLS_POST_LOGOUT_REDIRECT: "https://accounts.isaiahwong.dev/auth/logout"
+  SERVE_COOKIES_SAME_SITE_MODE: "Lax"

@@ -16,5 +16,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/
 
 FROM alpine
 COPY --from=builder /go/bin/accounts /go/bin/accounts
+COPY ./cmd/grpc_health_probe-linux-amd64 /go/bin/
+RUN chmod +x /go/bin/grpc_health_probe-linux-amd64 
 
 ENTRYPOINT ["/go/bin/accounts"]

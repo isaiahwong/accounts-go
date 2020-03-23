@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"net"
 	"reflect"
@@ -10,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	healthV1 "github.com/isaiahwong/accounts-go/api/health/v1"
 	"github.com/isaiahwong/accounts-go/internal/common/log"
 	"github.com/isaiahwong/accounts-go/internal/store"
 )
@@ -81,5 +83,13 @@ func New(opt ...Option) (*Server, error) {
 		Name:       opts.name,
 	}
 
+	// Register HealthService
+	healthV1.RegisterHealthServer(gs, server)
+
 	return server, nil
+}
+
+// Check ensures all services the server is running is healthy
+func (*Server) Check(ctx context.Context, req *healthV1.HealthCheckRequest) (*healthV1.HealthCheckResponse, error) {
+	return &healthV1.HealthCheckResponse{Status: healthV1.HealthCheckResponse_SERVING}, nil
 }

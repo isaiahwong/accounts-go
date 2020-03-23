@@ -40,13 +40,33 @@ gen-manifest-release:
 	./tools/gen-manifest.sh gen-cert --release true
 
 genproto:
-	if [ ! -d "protogen" ]; then \
-			mkdir protogen; \
+	if [ ! -d "api" ]; then \
+			mkdir api; \
 	fi
 
-	protoc -I./proto/api -I./proto/third_party/googleapis --go_out=plugins=grpc:./protogen ./proto/api/accounts/v1/*.proto
+	protoc -I./proto/api -I./proto/third_party/googleapis --go_out=plugins=grpc:./api ./proto/api/accounts/v1/*.proto
 
 genmocks:
 	mockery -name=DataStore -dir=./internal/store -recursive=true -output=./tests/mocks       
 	mockery -name=Repo -dir=./internal/store/repo/accounts -recursive=true -output=./tests/mocks        
 
+
+compose-token:
+	docker-compose -f docker-compose.yml exec hydra \
+    hydra clients create \
+    --endpoint http://127.0.0.1:4445 \
+    --id auth-code-client-2 \
+    --secret secret \
+    --grant-types authorization_code,refresh_token \
+    --response-types code,id_token \
+    --scope openid,offline \
+    --callbacks http://127.0.0.1:5555/callback
+
+compose-client:
+	docker-compose -f docker-compose.yml exec hydra \
+	hydra token user \
+	--client-id auth-code-client-2 \
+	--client-secret secret \
+	--endpoint http://127.0.0.1:4444/ \
+	--port 5555 \
+	--scope openid,offline
