@@ -27,6 +27,37 @@ curl -X POST  https://accounts.isaiahwong.dev/oauth2admin/clients \
 }'
 ```
 
+# local client key
+```
+curl -X POST -k https://127.0.0.1/oauth2/admin/clients \
+-H 'Content-Type: application/json' -H 'Accept: application/json' \
+  --data '{
+  "client_id": "3494ea93c861183e12dad823138b8b6f24b8ab5d12312df15",
+  "client_secret": "d5d68a699d7b1821b7255edea14f9b0a96b5bc17",
+  "grant_types": [
+    "authorization_code",
+    "refresh_token",
+    "client_credentials",
+    "implicit"
+  ],
+  "response_types": [
+    "token",
+    "code",
+    "id_token"
+  ],
+  "scope": "openid offline photos.read",
+  "redirect_uris": [
+    "http://127.0.0.1/auth/callback"
+  ]
+}'
+```
+
+# Introspect
+```
+curl -X POST -k https://127.0.0.1/oauth2/admin/oauth2/introspect \
+-H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' \
+  --data 'token=FUr0B87IP1zLviGjqSTdsXGYn-fWVzUet0HTlPjqUcw.-NNoO7fZqDzbnq6BAWPqGf-AeGujBOM1bLO-x2t9cV8'
+```
 # Delete a client key
 ```
 curl -X DELETE https://accounts.isaiahwong.dev/oauth2admin/clients/isaiahwongdev

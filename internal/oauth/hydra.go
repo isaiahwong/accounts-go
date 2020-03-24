@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	url "net/url"
+	"strconv"
+	"strings"
 
 	"github.com/isaiahwong/accounts-go/internal/common"
 )
@@ -16,7 +19,7 @@ type Hydra struct {
 }
 
 func (h *Hydra) get(flow string, challenge string) (*HydraResponse, error) {
-	url := fmt.Sprintf("%v/%v?%v_challenge=%v", h.hydraURL, flow, flow, challenge)
+	url := fmt.Sprintf("%v/oauth2/auth/requests/%v?%v_challenge=%v", h.hydraURL, flow, flow, challenge)
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -50,17 +53,17 @@ func (h *Hydra) get(flow string, challenge string) (*HydraResponse, error) {
 }
 
 func (h *Hydra) put(flow string, action string, challenge string, body interface{}) (*HydraRedirect, error) {
-	url := fmt.Sprintf("%v/%v/%v?%v_challenge=%v", h.hydraURL, flow, action, flow, challenge)
+	url := fmt.Sprintf("%v/oauth2/auth/requests/%v/%v?%v_challenge=%v", h.hydraURL, flow, action, flow, challenge)
 	d, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
-	client := &http.Client{}
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(d))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -124,10 +127,48 @@ func (h *Hydra) RejectLogout(challenge string, body *HydraError) (*HydraRedirect
 	return h.put("logout", "reject", challenge, nil)
 }
 
+func (h *Hydra) Introspect(token, scope string) (*InstrospectResponse, error) {
+	target := fmt.Sprintf("%v/oauth2/introspect", h.hydraURL)
+
+	data := url.Values{}
+	data.Set("token", token)
+	data.Set("scope", scope)
+
+	req, err := http.NewRequest("POST", target, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Length", strconv.Itoa(len(data.Encode())))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode > 302 {
+		he := &HydraError{}
+		if err := json.Unmarshal(b, he); err != nil {
+			return nil, errors.New("An error while making request to hydra " + string(b))
+		}
+		return nil, he
+	}
+
+	r := &InstrospectResponse{}
+	err = json.Unmarshal(b, r)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
 // NewHydraClient
 func NewHydraClient() *Hydra {
 	url := common.MapEnvWithDefaults("HYDRA_ADMIN_URL", "http://localhost:9000")
-	url += "/oauth2/auth/requests"
 	return &Hydra{
 		hydraURL: url,
 	}

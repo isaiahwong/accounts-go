@@ -10,7 +10,7 @@ metadata:
       "path": "/accounts",
       "apiVersion": "v1",
       "authentication": {
-        "required": "false"
+        "required": "true"
       }
     }'
 spec:
@@ -29,7 +29,7 @@ kind: ConfigMap
 metadata:
   name: accounts-env-configmap
 data:
-  APP_ENV: "production"
+  APP_ENV: "development"
   MAINTENANCE_MODE: "false"
   ADDRESS: ":5000"
   
@@ -52,8 +52,6 @@ data:
 
   # Recaptcha
   GOOGLE_RECAPTCHA_URL: "https://www.google.com/recaptcha/api/siteverify"
-  GRPC_TRACE: "all"
-  GRPC_VERBOSITY: "DEBUG"
 
   # Hydra
   HYDRA_ADMIN_URL: "http://hydra-service.default.svc.cluster.local:9001"
@@ -89,15 +87,15 @@ spec:
           #     cpu: 80m
           #     memory: 128Mi
 
-          readinessProbe:
-            exec:
-              command: ["go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
-            initialDelaySeconds: 5
+          # readinessProbe:
+          #   exec:
+          #     command: ["go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
+          #   initialDelaySeconds: 5
 
           livenessProbe:
             exec:
               command: ["/go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
-            initialDelaySeconds: 10
+            initialDelaySeconds: 60
             
           envFrom:
           - configMapRef:

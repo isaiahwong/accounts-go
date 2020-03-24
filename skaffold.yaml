@@ -4,11 +4,10 @@ metadata:
   name: accounts-go
 build:
   artifacts:
-  - image: registry.gitlab.com/isaiahwong/api/accounts
+  - image: registry.gitlab.com/isaiahwong/cluster/api/accounts
     docker:
       dockerfile: Dockerfile.dev
 deploy:
   kubectl:
     manifests:
     - k8s/accounts.yaml
-    - k8s/mongo-accounts.yaml

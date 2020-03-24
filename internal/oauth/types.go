@@ -133,6 +133,35 @@ type HydraConsentAccept struct {
 	RememberFor              int       `json:"remember_for"`
 	Session                  Session   `json:"session"`
 }
+
 type HydraRedirect struct {
 	RedirectTo string `json:"redirect_to"`
+}
+
+type Ext struct {
+	Property1 struct {
+	} `json:"property1"`
+	Property2 struct {
+	} `json:"property2"`
+}
+
+type IntrospectRequest struct {
+	Token string `json:"token"`
+	Scope string `json:"scope"`
+}
+
+type InstrospectResponse struct {
+	Active            bool     `json:"active"`
+	Aud               []string `json:"aud"`
+	ClientID          string   `json:"client_id"`
+	Exp               int64    `json:"exp"`
+	Ext               Ext      `json:"ext"`
+	Iat               int64    `json:"iat"`
+	Iss               string   `json:"iss"`
+	Nbf               int64    `json:"nbf"`
+	ObfuscatedSubject string   `json:"obfuscated_subject"`
+	Scope             string   `json:"scope"`
+	Sub               string   `json:"sub"`
+	TokenType         string   `json:"token_type"`
+	Username          string   `json:"username"`
 }

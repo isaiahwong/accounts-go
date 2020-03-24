@@ -47,14 +47,25 @@ func (s *Service) returnHydraError(ctx context.Context, he *oauth.HydraError, pr
 	md.Append("errors-bin", string(json))
 	grpc.SetTrailer(ctx, md)
 
+	var c codes.Code
+	desc := he.ErrorDescription
+
 	switch he.StatusCode {
-	case 409:
-		return status.Error(codes.AlreadyExists, he.ErrorDescription)
+	case 401:
+		c = codes.PermissionDenied
 	case 404:
-		return status.Error(codes.NotFound, he.ErrorDescription)
+		c = codes.NotFound
+	case 409:
+		c = codes.AlreadyExists
+	case 500:
+		c = codes.Internal
 	default:
-		return status.Error(codes.Internal, "An Internal error has occurred")
+		c = codes.Internal
 	}
+	if c == codes.Internal {
+		desc = "An Internal error has occurred"
+	}
+	return status.Error(c, desc)
 }
 
 func (s *Service) findAccountByEmail(ctx context.Context, email string) (*models.Account, error) {

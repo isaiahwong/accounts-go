@@ -26,6 +26,68 @@ const (
 	ConsentChallenge = "consent-challenge"
 )
 
+func (s *Service) Introspect(ctx context.Context, req *accountsV1.IntrospectRequest) (*accountsV1.IntrospectResponse, error) {
+	api := "Introspect"
+	token := req.GetToken()
+	scope := req.GetScope()
+	ip := common.GetMetadataValue(ctx, XForwardedFor)
+
+	errors := validator.Val(
+		s.validate,
+		validator.Field{
+			Param:   token,
+			Message: "token required",
+			Value:   token,
+			Tag:     `required`,
+		},
+		// validator.Field{
+		// 	Param:   scope,
+		// 	Message: "scope required",
+		// 	Value:   scope,
+		// 	Tag:     `required`,
+		// },
+		validator.Field{
+			Param:   XForwardedFor,
+			Message: XForwardedFor + " header required",
+			Value:   ip,
+			Tag:     `required`,
+		},
+	)
+
+	// Validate
+	if len(errors) > 0 {
+		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Invalid arguments", api)
+	}
+	// Prepend IP for logging
+	api = fmt.Sprintf("[%v] %v", ip, api)
+
+	token = strings.Split(token, " ")[1]
+	resp, err := s.oAuthClient.Introspect(token, scope)
+	if err != nil {
+		s.logger.Errorf("%v: %v", api, err)
+		// Cast  to hydra error
+		if he, ok := err.(*oauth.HydraError); ok {
+			return nil, s.returnHydraError(ctx, he, api)
+		}
+		return nil, status.Error(codes.Internal, "An Internal error has occurred")
+	}
+	return &accountsV1.IntrospectResponse{
+		Active:   resp.Active,
+		Aud:      resp.Aud,
+		ClientId: resp.ClientID,
+		Exp:      resp.Exp,
+		// Ext: resp.Ext,
+		Iat:               resp.Iat,
+		Iss:               resp.Iss,
+		Nbf:               resp.Nbf,
+		ObfuscatedSubject: resp.ObfuscatedSubject,
+		Scope:             resp.Scope,
+		Sub:               resp.Sub,
+		TokenType:         resp.TokenType,
+		Username:          resp.Username,
+	}, nil
+}
+
 func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (*accountsV1.HydraResponse, error) {
 	api := "LoginWithChallenge"
 
