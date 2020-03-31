@@ -44,7 +44,7 @@ genproto:
 			mkdir api; \
 	fi
 
-	protoc -I./proto/api -I./proto/third_party/googleapis --go_out=plugins=grpc:./api ./proto/api/accounts/v1/*.proto
+	protoc -I./proto/accounts-proto/api -I./proto/third_party/googleapis --go_out=plugins=grpc:./api ./proto/accounts-proto/api/accounts/v1/*.proto
 
 genmocks:
 	mockery -name=DataStore -dir=./internal/store -recursive=true -output=./tests/mocks       

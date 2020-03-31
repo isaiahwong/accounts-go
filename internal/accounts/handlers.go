@@ -26,68 +26,6 @@ const (
 	ConsentChallenge = "consent-challenge"
 )
 
-func (s *Service) Introspect(ctx context.Context, req *accountsV1.IntrospectRequest) (*accountsV1.IntrospectResponse, error) {
-	api := "Introspect"
-	token := req.GetToken()
-	scope := req.GetScope()
-	ip := common.GetMetadataValue(ctx, XForwardedFor)
-
-	errors := validator.Val(
-		s.validate,
-		validator.Field{
-			Param:   token,
-			Message: "token required",
-			Value:   token,
-			Tag:     `required`,
-		},
-		// validator.Field{
-		// 	Param:   scope,
-		// 	Message: "scope required",
-		// 	Value:   scope,
-		// 	Tag:     `required`,
-		// },
-		validator.Field{
-			Param:   XForwardedFor,
-			Message: XForwardedFor + " header required",
-			Value:   ip,
-			Tag:     `required`,
-		},
-	)
-
-	// Validate
-	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Invalid arguments", api)
-	}
-	// Prepend IP for logging
-	api = fmt.Sprintf("[%v] %v", ip, api)
-
-	token = strings.Split(token, " ")[1]
-	resp, err := s.oAuthClient.Introspect(token, scope)
-	if err != nil {
-		s.logger.Errorf("%v: %v", api, err)
-		// Cast  to hydra error
-		if he, ok := err.(*oauth.HydraError); ok {
-			return nil, s.returnHydraError(ctx, he, api)
-		}
-		return nil, status.Error(codes.Internal, "An Internal error has occurred")
-	}
-	return &accountsV1.IntrospectResponse{
-		Active:   resp.Active,
-		Aud:      resp.Aud,
-		ClientId: resp.ClientID,
-		Exp:      resp.Exp,
-		// Ext: resp.Ext,
-		Iat:               resp.Iat,
-		Iss:               resp.Iss,
-		Nbf:               resp.Nbf,
-		ObfuscatedSubject: resp.ObfuscatedSubject,
-		Scope:             resp.Scope,
-		Sub:               resp.Sub,
-		TokenType:         resp.TokenType,
-		Username:          resp.Username,
-	}, nil
-}
-
 func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (*accountsV1.HydraResponse, error) {
 	api := "LoginWithChallenge"
 
@@ -112,7 +50,7 @@ func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (
 
 	// Validate
 	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Invalid arguments", api)
+		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -176,7 +114,7 @@ func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empt
 	)
 	// Validate
 	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Invalid arguments", api)
+		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -188,6 +126,8 @@ func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empt
 	}
 
 	// Retrieve account
+	ctx, cancel := context.WithTimeout(ctx, s.accountsRepo.GetTimeout())
+	defer cancel()
 	u, err := s.findAccountByID(ctx, resp.Subject)
 	if err != nil {
 		s.logger.Errorf("%v: %v", api, err)
@@ -234,6 +174,122 @@ func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empt
 		return nil, ie
 	}
 	return &accountsV1.RedirectResponse{RedirectTo: r.RedirectTo}, nil
+}
+
+func (s *Service) Introspect(ctx context.Context, req *accountsV1.IntrospectRequest) (*accountsV1.IntrospectResponse, error) {
+	api := "Introspect"
+	token := req.GetToken()
+	scope := req.GetScope()
+	ip := common.GetMetadataValue(ctx, XForwardedFor)
+
+	errors := validator.Val(
+		s.validate,
+		validator.Field{
+			Param:   token,
+			Message: "token required",
+			Value:   token,
+			Tag:     `required`,
+		},
+		// validator.Field{
+		// 	Param:   scope,
+		// 	Message: "scope required",
+		// 	Value:   scope,
+		// 	Tag:     `required`,
+		// },
+		validator.Field{
+			Param:   XForwardedFor,
+			Message: XForwardedFor + " header required",
+			Value:   ip,
+			Tag:     `required`,
+		},
+	)
+
+	// Validate
+	if len(errors) > 0 {
+		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
+	}
+	// Prepend IP for logging
+	api = fmt.Sprintf("[%v] %v", ip, api)
+
+	token = strings.Split(token, " ")[1]
+	resp, err := s.oAuthClient.Introspect(token, scope)
+	if err != nil {
+		s.logger.Errorf("%v: %v", api, err)
+		// Cast  to hydra error
+		if he, ok := err.(*oauth.HydraError); ok {
+			return nil, s.returnHydraError(ctx, he, api)
+		}
+		return nil, status.Error(codes.Internal, "An Internal error has occurred")
+	}
+	return &accountsV1.IntrospectResponse{
+		Active:   resp.Active,
+		Aud:      resp.Aud,
+		ClientId: resp.ClientID,
+		Exp:      resp.Exp,
+		// Ext: resp.Ext,
+		Iat:               resp.Iat,
+		Iss:               resp.Iss,
+		Nbf:               resp.Nbf,
+		ObfuscatedSubject: resp.ObfuscatedSubject,
+		Scope:             resp.Scope,
+		Sub:               resp.Sub,
+		TokenType:         resp.TokenType,
+		Username:          resp.Username,
+	}, nil
+}
+
+func (s *Service) AccountExists(ctx context.Context, req *accountsV1.AccountExistsRequest) (*accountsV1.AccountExistsResponse, error) {
+	api := "AccountExists"
+
+	ip := common.GetMetadataValue(ctx, XForwardedFor)
+	id := req.GetId()
+
+	errors := validator.Val(s.validate,
+		validator.Field{
+			Message: "Invalid account id",
+			Param:   "id",
+			Value:   id,
+			Tag:     "required",
+		},
+		validator.Field{
+			Param:   "x-forward-for",
+			Message: "x-forward-for header required",
+			Value:   ip,
+			Tag:     `required`,
+		},
+	)
+
+	if len(errors) > 0 {
+		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
+	}
+	// Prepend IP for logging
+	api = fmt.Sprintf("[%v] %v", ip, api)
+
+	ctx, cancel := context.WithTimeout(ctx, s.accountsRepo.GetTimeout())
+	defer cancel()
+	acc, err := s.findAccountByID(ctx, id)
+	if err != nil {
+		s.logger.Errorf("%v: %v", api, err)
+		return nil, status.Error(codes.Internal, "An Internal error has occurred")
+	}
+	if acc == nil {
+		s.logger.Errorf("%v: Account not found", api)
+		return nil, s.returnErrors(ctx, []validator.Error{
+			validator.Error{
+				Message: "Account not found",
+				Param:   "id",
+				Value:   id,
+			},
+		}, codes.NotFound, "Malformed request", api)
+	}
+
+	return &accountsV1.AccountExistsResponse{
+		Id:        acc.ID.Hex(),
+		Email:     acc.Auth.Email,
+		FirstName: acc.Auth.FirstName,
+		LastName:  acc.Auth.LastName,
+		Name:      acc.Auth.Name,
+	}, nil
 }
 
 func (s *Service) IsAuthenticated(ctx context.Context, in *accountsV1.Empty) (*accountsV1.AuthenticateResponse, error) {
@@ -307,7 +363,7 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 	)
 	// Validate
 	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Invalid arguments", api)
+		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -387,7 +443,7 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 func (s *Service) Authenticate(ctx context.Context, req *accountsV1.AuthenticateRequest) (*accountsV1.RedirectResponse, error) {
 	api := "Authenticate"
 
-	ip := common.GetMetadataValue(ctx, "x-forwarded-for")
+	ip := common.GetMetadataValue(ctx, XForwardedFor)
 	captchaResponse := common.GetMetadataValue(ctx, "captcha-response")
 
 	challenge := common.GetMetadataValue(ctx, LoginChallenge)
@@ -424,7 +480,7 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 	)
 	// Validate
 	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.PermissionDenied, "Invalid arguments", api)
+		return nil, s.returnErrors(ctx, errors, codes.PermissionDenied, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -455,7 +511,7 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 		}, codes.PermissionDenied, "Wrong email or password", api)
 	}
 
-	// Add time constant for comparing hash
+	// TODO: Add time constant for comparing hash
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Auth.Password), []byte(password)); err != nil {
 		return nil, s.returnErrors(ctx, []validator.Error{
 			{
@@ -501,7 +557,7 @@ func (s *Service) EmailExists(ctx context.Context, req *accountsV1.EmailExistsRe
 	api := "EmailExists"
 
 	email := strings.ToLower(strings.TrimSpace(req.GetEmail()))
-	ip := common.GetMetadataValue(ctx, "x-forwarded-for")
+	ip := common.GetMetadataValue(ctx, XForwardedFor)
 	captchaResponse := common.GetMetadataValue(ctx, "captcha-response")
 
 	errors := validator.Val(
@@ -528,7 +584,7 @@ func (s *Service) EmailExists(ctx context.Context, req *accountsV1.EmailExistsRe
 
 	// Validate
 	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Invalid arguments", api)
+		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
 	}
 
 	// Verify reCAPTCHA

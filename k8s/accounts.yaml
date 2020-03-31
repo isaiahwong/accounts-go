@@ -6,12 +6,9 @@ metadata:
     resourceType: api-service
   annotations:
     config: '{
-      "expose": true,
+      "expose": false,
       "path": "/accounts",
       "apiVersion": "v1",
-      "authentication": {
-        "required": "true"
-      }
     }'
 spec:
   ports:

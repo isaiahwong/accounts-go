@@ -20,6 +20,10 @@ type mongoAccountsRepo struct {
 	name string
 }
 
+func (r *mongoAccountsRepo) GetTimeout() time.Duration {
+	return r.m.Timeout
+}
+
 func (r *mongoAccountsRepo) Save(ctx context.Context, u *models.Account) (string, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc

@@ -13,7 +13,7 @@ import (
 	"github.com/isaiahwong/accounts-go/internal/oauth"
 	"github.com/isaiahwong/accounts-go/internal/store"
 	"github.com/isaiahwong/accounts-go/internal/store/drivers/mongo"
-	accounts "github.com/isaiahwong/accounts-go/internal/store/repo/accounts"
+	repo "github.com/isaiahwong/accounts-go/internal/store/repo/accounts"
 	"github.com/microcosm-cc/bluemonday"
 )
 
@@ -26,7 +26,7 @@ type Service struct {
 	validate        *validator.Validate
 	recaptchaURL    string
 	recaptchaSecret string
-	accountsRepo    accounts.Repo
+	accountsRepo    repo.Repo
 	oAuthClient     *oauth.Hydra
 	mailSVC         mailV1.MailServiceClient
 }
@@ -36,7 +36,7 @@ func (svc *Service) initRepoWithMongo(s store.DataStore) error {
 	if !ok {
 		return errors.New("Invalid Type. Only MongoStore is supported at this time")
 	}
-	svc.accountsRepo = accounts.NewMongoAccountsRepo(m)
+	svc.accountsRepo = repo.NewMongoAccountsRepo(m)
 	return nil
 }
 

@@ -1,6 +1,8 @@
 package validator
 
 import (
+	"reflect"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -12,13 +14,14 @@ type Field struct {
 	OtherValue     interface{}
 	Tag            string
 	OmitParamValue bool
+	Fields         [][]Field
 }
 
 type Error struct {
-	ErrorName string      `json:"error"`
-	Param     string      `json:"param"`
-	Message   string      `json:"message"`
-	Value     interface{} `json:"value"`
+	Param   string      `json:"param"`
+	Message string      `json:"message"`
+	Value   interface{} `json:"value"`
+	Errors  [][]Error   `json:"errors"`
 }
 
 // Val returns errors
@@ -28,6 +31,7 @@ func Val(validate *validator.Validate, fields ...Field) (errors []Error) {
 	}
 	for _, field := range fields {
 		var err error
+
 		if field.OtherValue != nil {
 			err = validate.VarWithValue(field.Value, field.OtherValue, field.Tag)
 		} else {
@@ -39,11 +43,25 @@ func Val(validate *validator.Validate, fields ...Field) (errors []Error) {
 			Message: field.Message,
 		}
 
+		// Checks if value is of type slice
+		t := reflect.ValueOf(field.Value)
+		if t.Kind() == reflect.Slice {
+			fe := [][]Error{}
+			for _, f := range field.Fields {
+				errs := Val(validate, f...)
+				if len(errs) > 0 {
+					fe = append(fe, errs)
+				}
+			}
+			if len(fe) > 0 {
+				e.Errors = fe
+			}
+		}
 		if !field.OmitParamValue {
 			e.Value = field.Value
 		}
 
-		if err != nil {
+		if err != nil || len(e.Errors) > 0 {
 			field.Tag = ""
 			errors = append(errors, e)
 		}
