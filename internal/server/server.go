@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"reflect"
+	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -43,6 +44,21 @@ func (s *Server) Serve() error {
 	return nil
 }
 
+func LoggerDecider(method string, err error) bool {
+	exclude := []string{
+		"/grpc.health.v1.Health/Check",
+	}
+	if err != nil {
+		return true
+	}
+	for _, e := range exclude {
+		if strings.Contains(method, e) {
+			return false
+		}
+	}
+	return true
+}
+
 // New returns a new Server
 func New(opt ...Option) (*Server, error) {
 	opts := defaultServerOptions
@@ -64,7 +80,7 @@ func New(opt ...Option) (*Server, error) {
 	// Create a new gRPC server
 	gs := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(l)),
+			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(l), grpc_logrus.WithDecider(LoggerDecider)),
 		)),
 	)
 

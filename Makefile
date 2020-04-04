@@ -36,6 +36,15 @@ build-push:
 clean:
 	docker rmi $( docker images | grep '<none>') --force 2>/dev/null
 
+set-image:
+	kubectl set image deployments/accounts-deployment accounts=$(IMAGE_NAME)
+
+set-image-latest:
+	kubectl set image deployments/accounts-deployment accounts=$(IMAGE_NAME):latest
+
+set-image-sha:
+	kubectl set image deployments/accounts-deployment accounts=$(IMAGE_NAME):${BUILD_ID}
+
 gen-manifest-release:
 	./tools/gen-manifest.sh gen-cert --release true
 
@@ -49,7 +58,6 @@ genproto:
 genmocks:
 	mockery -name=DataStore -dir=./internal/store -recursive=true -output=./tests/mocks       
 	mockery -name=Repo -dir=./internal/store/repo/accounts -recursive=true -output=./tests/mocks        
-
 
 compose-token:
 	docker-compose -f docker-compose.yml exec hydra \
