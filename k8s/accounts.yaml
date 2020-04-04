@@ -8,7 +8,7 @@ metadata:
     config: '{
       "expose": false,
       "path": "/accounts",
-      "apiVersion": "v1",
+      "apiVersion": "v1"
     }'
 spec:
   ports:
@@ -43,9 +43,6 @@ data:
 
   # Password reset parameters
   PASSWORD_RESET_EXPIRES: "1800000" # in milliseconds
-  
-  # cors
-  DEV_CLIENT: "http://localhost:3000"
 
   # Recaptcha
   GOOGLE_RECAPTCHA_URL: "https://www.google.com/recaptcha/api/siteverify"

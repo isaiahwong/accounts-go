@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -27,12 +28,12 @@ const (
 )
 
 func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (*accountsV1.HydraResponse, error) {
-	api := "LoginWithChallenge"
+	api := "LoginWithChallenge: "
 
 	challenge := common.GetMetadataValue(ctx, LoginChallenge)
 	ip := common.GetMetadataValue(ctx, XForwardedFor)
 
-	errors := validator.Val(
+	errs := validator.Val(
 		s.validate,
 		validator.Field{
 			Param:   LoginChallenge,
@@ -49,8 +50,8 @@ func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (
 	)
 
 	// Validate
-	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
+	if len(errs) > 0 {
+		return nil, s.returnErrors(ctx, errs, codes.InvalidArgument, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -92,12 +93,12 @@ func (s *Service) LoginWithChallenge(ctx context.Context, _ *accountsV1.Empty) (
 }
 
 func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empty) (*accountsV1.RedirectResponse, error) {
-	api := "ConsentWithChallenge"
+	api := "ConsentWithChallenge: "
 	ie := status.Error(codes.Internal, "An Internal error has occurred")
 	challenge := common.GetMetadataValue(ctx, ConsentChallenge)
 	ip := common.GetMetadataValue(ctx, XForwardedFor)
 
-	errors := validator.Val(
+	errs := validator.Val(
 		s.validate,
 		validator.Field{
 			Param:   ConsentChallenge,
@@ -113,8 +114,8 @@ func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empt
 		},
 	)
 	// Validate
-	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
+	if len(errs) > 0 {
+		return nil, s.returnErrors(ctx, errs, codes.InvalidArgument, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -152,6 +153,7 @@ func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empt
 				"family_name": u.Auth.LastName,
 				"name":        u.Auth.Name,
 				"picture":     u.Auth.Picture,
+				"account_id":  u.ID.Hex(),
 				// "email_verified": true,
 				// "gender": "string",
 				// "locale": "string",
@@ -177,12 +179,12 @@ func (s *Service) ConsentWithChallenge(ctx context.Context, req *accountsV1.Empt
 }
 
 func (s *Service) Introspect(ctx context.Context, req *accountsV1.IntrospectRequest) (*accountsV1.IntrospectResponse, error) {
-	api := "Introspect"
+	api := "Introspect: "
 	token := req.GetToken()
 	scope := req.GetScope()
 	ip := common.GetMetadataValue(ctx, XForwardedFor)
 
-	errors := validator.Val(
+	errs := validator.Val(
 		s.validate,
 		validator.Field{
 			Param:   token,
@@ -205,8 +207,8 @@ func (s *Service) Introspect(ctx context.Context, req *accountsV1.IntrospectRequ
 	)
 
 	// Validate
-	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
+	if len(errs) > 0 {
+		return nil, s.returnErrors(ctx, errs, codes.InvalidArgument, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -239,12 +241,12 @@ func (s *Service) Introspect(ctx context.Context, req *accountsV1.IntrospectRequ
 }
 
 func (s *Service) AccountExists(ctx context.Context, req *accountsV1.AccountExistsRequest) (*accountsV1.AccountExistsResponse, error) {
-	api := "AccountExists"
+	api := "AccountExists: "
 
 	ip := common.GetMetadataValue(ctx, XForwardedFor)
 	id := req.GetId()
 
-	errors := validator.Val(s.validate,
+	errs := validator.Val(s.validate,
 		validator.Field{
 			Message: "Invalid account id",
 			Param:   "id",
@@ -259,8 +261,8 @@ func (s *Service) AccountExists(ctx context.Context, req *accountsV1.AccountExis
 		},
 	)
 
-	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
+	if len(errs) > 0 {
+		return nil, s.returnErrors(ctx, errs, codes.InvalidArgument, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -268,12 +270,11 @@ func (s *Service) AccountExists(ctx context.Context, req *accountsV1.AccountExis
 	ctx, cancel := context.WithTimeout(ctx, s.accountsRepo.GetTimeout())
 	defer cancel()
 	acc, err := s.findAccountByID(ctx, id)
-	if err != nil {
+	if err != nil || acc == nil {
+		if err == nil {
+			err = errors.New("Account not found")
+		}
 		s.logger.Errorf("%v: %v", api, err)
-		return nil, status.Error(codes.Internal, "An Internal error has occurred")
-	}
-	if acc == nil {
-		s.logger.Errorf("%v: Account not found", api)
 		return nil, s.returnErrors(ctx, []validator.Error{
 			validator.Error{
 				Message: "Account not found",
@@ -298,7 +299,7 @@ func (s *Service) IsAuthenticated(ctx context.Context, in *accountsV1.Empty) (*a
 
 // SignUp is a gRPC handler allows account to register
 func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*accountsV1.RedirectResponse, error) {
-	api := "SignUp"
+	api := "SignUp: "
 
 	ip := common.GetMetadataValue(ctx, XForwardedFor)
 	captchaResponse := common.GetMetadataValue(ctx, CaptchaResponse)
@@ -309,7 +310,7 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 	password := strings.TrimSpace(req.GetPassword())
 	cpassword := strings.TrimSpace(req.GetConfirmPassword())
 
-	errors := validator.Val(
+	errs := validator.Val(
 		s.validate,
 		validator.Field{
 			Param:   "first_name",
@@ -362,8 +363,8 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 		},
 	)
 	// Validate
-	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
+	if len(errs) > 0 {
+		return nil, s.returnErrors(ctx, errs, codes.InvalidArgument, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -376,6 +377,17 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 			s.logger.Errorf("%v: recaptcha verify: %v", api, err)
 			return nil, status.Error(codes.InvalidArgument, "Captcha Verification Failed")
 		}
+	}
+
+	// Check Login Challenge
+	_, err := s.oAuthClient.Login(challenge)
+	if err != nil {
+		s.logger.Errorf("%v: %v", api, err)
+		// Cast  to hydra error
+		if he, ok := err.(*oauth.HydraError); ok {
+			return nil, s.returnHydraError(ctx, he, api)
+		}
+		return nil, status.Error(codes.Internal, "An Internal error has occurred")
 	}
 
 	// Check if email exists
@@ -417,7 +429,8 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 				Timestamp: time.Now(),
 			},
 		},
-		Object: "account",
+		LoggedIn: time.Now(),
+		Object:   "account",
 	}
 	id, err := s.accountsRepo.Save(nil, u)
 	if err != nil {
@@ -441,7 +454,7 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 
 // Authenticate is a gRPC handler that allows account to authenticate
 func (s *Service) Authenticate(ctx context.Context, req *accountsV1.AuthenticateRequest) (*accountsV1.RedirectResponse, error) {
-	api := "Authenticate"
+	api := "Authenticate: "
 
 	ip := common.GetMetadataValue(ctx, XForwardedFor)
 	captchaResponse := common.GetMetadataValue(ctx, "captcha-response")
@@ -450,7 +463,7 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 	email := strings.ToLower(strings.TrimSpace(req.GetEmail()))
 	password := strings.TrimSpace(req.GetPassword())
 
-	errors := validator.Val(
+	errs := validator.Val(
 		s.validate,
 		validator.Field{
 			Param:   "email",
@@ -479,8 +492,8 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 		},
 	)
 	// Validate
-	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.PermissionDenied, "Malformed request", api)
+	if len(errs) > 0 {
+		return nil, s.returnErrors(ctx, errs, codes.PermissionDenied, "Malformed request", api)
 	}
 	// Prepend IP for logging
 	api = fmt.Sprintf("[%v] %v", ip, api)
@@ -554,13 +567,13 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 }
 
 func (s *Service) EmailExists(ctx context.Context, req *accountsV1.EmailExistsRequest) (*accountsV1.EmailExistsResponse, error) {
-	api := "EmailExists"
+	api := "EmailExists: "
 
 	email := strings.ToLower(strings.TrimSpace(req.GetEmail()))
 	ip := common.GetMetadataValue(ctx, XForwardedFor)
 	captchaResponse := common.GetMetadataValue(ctx, "captcha-response")
 
-	errors := validator.Val(
+	errs := validator.Val(
 		s.validate,
 		validator.Field{
 			Param:   "email",
@@ -583,8 +596,8 @@ func (s *Service) EmailExists(ctx context.Context, req *accountsV1.EmailExistsRe
 	)
 
 	// Validate
-	if len(errors) > 0 {
-		return nil, s.returnErrors(ctx, errors, codes.InvalidArgument, "Malformed request", api)
+	if len(errs) > 0 {
+		return nil, s.returnErrors(ctx, errs, codes.InvalidArgument, "Malformed request", api)
 	}
 
 	// Verify reCAPTCHA

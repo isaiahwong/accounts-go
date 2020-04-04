@@ -22,18 +22,18 @@ curl -X POST  https://accounts.isaiahwong.dev/oauth2admin/clients \
   ],
   "scope": "openid offline photos.read",
   "redirect_uris": [
-    "https://accounts.isaiahwong.dev/callback"
+    "https://accounts.isaiahwong.dev/client/claims/noop"
   ]
 }'
 ```
 
 # local client key
 ```
-curl -X POST -k https://127.0.0.1/oauth2/admin/clients \
+curl -X POST -k http://127.0.0.1/oauth2/admin/clients \
 -H 'Content-Type: application/json' -H 'Accept: application/json' \
   --data '{
-  "client_id": "3494ea93c861183e12dad823138b8b6f24b8ab5d12312df15",
-  "client_secret": "d5d68a699d7b1821b7255edea14f9b0a96b5bc17",
+  "client_id": "2dad83494ea93c861183e123138b8b6f24b8ab5d12312df15",
+  "client_secret": "f9b0a96bd5d68a699d7b1821b7255edea145bc17",
   "grant_types": [
     "authorization_code",
     "refresh_token",
@@ -45,9 +45,9 @@ curl -X POST -k https://127.0.0.1/oauth2/admin/clients \
     "code",
     "id_token"
   ],
-  "scope": "openid offline photos.read",
+  "scope": "openid offline",
   "redirect_uris": [
-    "http://127.0.0.1/auth/callback"
+    "http://127.0.0.1/client/claims/noop"
   ]
 }'
 ```

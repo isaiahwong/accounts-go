@@ -51,11 +51,11 @@ metadata:
 spec:
   tls:
   - hosts:
-    - accounts.isaiahwong.dev
+    - accounts.cander.io
     secretName: api-cert
 
   rules:
-    - host: accounts.isaiahwong.dev
+    - host: accounts.cander.io
       http:
         paths:
         - path: /auth
@@ -113,11 +113,11 @@ metadata:
 spec:
   tls:
   - hosts:
-    - accounts.isaiahwong.dev
+    - accounts.cander.io
     secretName: api-cert
 
   rules:
-    - host: accounts.isaiahwong.dev
+    - host: accounts.cander.io
       http:
         paths:
         - path: /issuer(/|$)(.*)
