@@ -552,9 +552,8 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 		bson.M{"_id": u.ID},
 		bson.M{
 			"$set": bson.M{
-				"auth.first_name": "Edited",
-				"updated_at":      time.Now(),
-				"logged_in":       time.Now(),
+				"updated_at": time.Now(),
+				"logged_in":  time.Now(),
 			},
 		},
 	)
