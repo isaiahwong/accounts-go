@@ -40,7 +40,7 @@ data:
   # Database
   DB_URI: "mongodb://mongo-accounts-service:27017"
 
-  DB_NAME: "accounts"
+  DB_NAME: "account"
   DB_TIMEOUT: "60"
   DB_INITIAL_TIMEOUT: "60"
 

@@ -70,8 +70,8 @@ func loadEnv() *EnvConfig {
 		Address:          common.MapEnvWithDefaults("ADDRESS", ":50051"),
 		DBUri:            common.MapEnvWithDefaults("DB_URI", "mongodb://localhost:27017"),
 		DBName:           common.MapEnvWithDefaults("DB_NAME", "accounts"),
-		DBUser:           common.MapEnvWithDefaults("MONGO_INITDB_ROOT_USERNAME", ""),
-		DBPassword:       common.MapEnvWithDefaults("MONGO_INITDB_ROOT_PASSWORD", ""),
+		DBUser:           common.MapEnvWithDefaults("MONGO_USERNAME", ""),
+		DBPassword:       common.MapEnvWithDefaults("MONGO_PASSWORD", ""),
 		DBTimeout:        dBTimeout,
 		DBInitialTimeout: initialTimeout,
 	}

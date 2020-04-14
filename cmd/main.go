@@ -24,11 +24,13 @@ func init() {
 		mongo.WithTimeout(config.DBTimeout),
 		mongo.WithInitialTimeout(config.DBInitialTimeout),
 		mongo.WithAuth(mongo.MongoCredential{
-			Username: config.DBUser,
-			Password: config.DBPassword,
+			Username:   config.DBUser,
+			Password:   config.DBPassword,
+			AuthSource: config.DBName,
 		}),
 		mongo.WithHeartbeat(config.DBTimeout),
 	)
+
 	if err != nil {
 		l.Fatalf("NewMongoStore: %v", err)
 	}
