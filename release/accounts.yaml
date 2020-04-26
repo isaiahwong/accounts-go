@@ -38,7 +38,7 @@ data:
   ENABLE_CONSOLE_LOGS_IN_TEST: "true"
 
   # Database
-  DB_URI: "mongodb://mongo-accounts-service:27017"
+  DB_URI: "mongodb://mongo-cander-0.mongo-cander-service:27017,mongo-cander-1.mongo-cander-service:27017,mongo-cander-2.mongo-cander-service:27017/?replicaSet=rs0"
 
   DB_NAME: "account"
   DB_TIMEOUT: "60"
@@ -81,21 +81,21 @@ spec:
 
           resources:
             requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
               cpu: 80m
               memory: 128Mi
+            limits:
+              cpu: 128m
+              memory: 256Mi
 
-          readinessProbe:
-            exec:
-              command: ["go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
-            initialDelaySeconds: 5
+          # readinessProbe:
+          #   exec:
+          #     command: ["go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
+          #   initialDelaySeconds: 5
 
           livenessProbe:
             exec:
               command: ["/go/bin/grpc_health_probe-linux-amd64", "-addr=:5000"]
-            initialDelaySeconds: 60
+            initialDelaySeconds: 180
             
           envFrom:
           - configMapRef:

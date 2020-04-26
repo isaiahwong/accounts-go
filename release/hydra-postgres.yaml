@@ -4,61 +4,62 @@ apiVersion: v1
 kind: Service
 metadata:
   name: hydra-postgres-service
+  labels:
+    name: hydra-postgres-service
 spec:
   ports:
-  - name: tcp
-    port: 5432
-    targetPort: postgres-port
-  selector: 
-    component: hydra-postgres
-  type: ClusterIP
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None
+  selector:
+    role: hydra-postgres
+
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: apps/v1beta1
+kind: StatefulSet
 metadata:
-  name: hydra-postgres-deployment
+  name: hydra-postgres
 spec:
+  serviceName: 'hydra-postgres-service'
   replicas: 1
-  selector: 
-    matchLabels:
-      component: hydra-postgres
   template:
     metadata:
       labels:
-        component: hydra-postgres
+        role: hydra-postgres
+        environment: production
     spec:
+      terminationGracePeriodSeconds: 10
       containers:
         - name: hydra-postgres
           image: postgres:9.6
           ports:
-            - name: postgres-port
-              containerPort: 5432
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: accounts-env-secrets
+          env:
+            - name: POSTGRES_DB
+              value: 'hydra'
+
           volumeMounts:
             - name: hydra-postgres-storage
               mountPath: /var/lib/postgresql/dat
               subPath: postgres
-          envFrom:
-          - secretRef:
-              name: accounts-env-secrets
-          env:
-          - name: POSTGRES_DB
-            value: "hydra"
-          
-      volumes:
-        - name: hydra-postgres-storage
-          persistentVolumeClaim:
-            claimName: hydra-postgres-pvc
 
+  volumeClaimTemplates:
+    - metadata:
+        name: hydra-postgres-storage
+      spec:
+        storageClassName: 'pg-retain-policy'
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 100Mi
 ---
-
-# Persistent Volume Claim
-apiVersion: v1
-kind: PersistentVolumeClaim
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
 metadata:
-  name: hydra-postgres-pvc
-spec: 
-  accessModes: 
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 50Mi
+  name: pg-retain-policy
+provisioner: docker.io/hostpath
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
