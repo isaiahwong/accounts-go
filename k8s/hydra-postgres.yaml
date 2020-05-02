@@ -50,16 +50,16 @@ spec:
     - metadata:
         name: hydra-postgres-storage
       spec:
-        storageClassName: 'pg-retain-policy'
+        # storageClassName: 'pg-retain-policy'
         accessModes: ['ReadWriteOnce']
         resources:
           requests:
             storage: 100Mi
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: pg-retain-policy
-provisioner: docker.io/hostpath
-reclaimPolicy: Retain
-volumeBindingMode: Immediate
+# ---
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: pg-retain-policy
+# provisioner: docker.io/hostpath
+# reclaimPolicy: Retain
+# volumeBindingMode: Immediate

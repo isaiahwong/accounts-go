@@ -254,8 +254,8 @@ func (s *Service) AccountExists(ctx context.Context, req *accountsV1.AccountExis
 			Tag:     "required",
 		},
 		validator.Field{
-			Param:   "x-forward-for",
-			Message: "x-forward-for header required",
+			Param:   XForwardedFor,
+			Message: XForwardedFor + " header required",
 			Value:   ip,
 			Tag:     `required`,
 		},
@@ -485,8 +485,8 @@ func (s *Service) Authenticate(ctx context.Context, req *accountsV1.Authenticate
 			Tag:     `required`,
 		},
 		validator.Field{
-			Param:   "x-forward-for",
-			Message: "x-forward-for header required",
+			Param:   XForwardedFor,
+			Message: XForwardedFor + " header required",
 			Value:   ip,
 			Tag:     `required`,
 		},
@@ -587,8 +587,8 @@ func (s *Service) EmailExists(ctx context.Context, req *accountsV1.EmailExistsRe
 			Tag:     `required`,
 		},
 		validator.Field{
-			Param:   "ip",
-			Message: "x-forward-for header required",
+			Param:   XForwardedFor,
+			Message: XForwardedFor + " header required",
 			Value:   ip,
 			Tag:     `required`,
 		},
