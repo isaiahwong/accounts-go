@@ -40,11 +40,12 @@ spec:
           env:
             - name: POSTGRES_DB
               value: 'hydra'
+            - name: PGDATA
+              value: '/var/lib/postgresql/data/pgdata'
 
           volumeMounts:
             - name: hydra-postgres-storage
-              mountPath: /var/lib/postgresql/dat
-              subPath: postgres
+              mountPath: /var/lib/postgresql/data
 
   volumeClaimTemplates:
     - metadata:
