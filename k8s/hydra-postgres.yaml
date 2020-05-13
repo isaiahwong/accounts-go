@@ -15,11 +15,14 @@ spec:
     role: hydra-postgres
 
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: hydra-postgres
 spec:
+  selector:
+    matchLabels:
+      role: hydra-postgres
   serviceName: 'hydra-postgres-service'
   replicas: 1
   template:
@@ -51,16 +54,16 @@ spec:
     - metadata:
         name: hydra-postgres-storage
       spec:
-        # storageClassName: 'pg-retain-policy'
+        storageClassName: 'pg-retain-policy'
         accessModes: ['ReadWriteOnce']
         resources:
           requests:
             storage: 100Mi
-# ---
-# apiVersion: storage.k8s.io/v1
-# kind: StorageClass
-# metadata:
-#   name: pg-retain-policy
-# provisioner: docker.io/hostpath
-# reclaimPolicy: Retain
-# volumeBindingMode: Immediate
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: pg-retain-policy
+provisioner: docker.io/hostpath
+reclaimPolicy: Retain
+volumeBindingMode: Immediate

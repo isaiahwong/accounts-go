@@ -305,8 +305,8 @@ func (s *Service) SignUp(ctx context.Context, req *accountsV1.SignUpRequest) (*a
 	captchaResponse := common.GetMetadataValue(ctx, CaptchaResponse)
 	challenge := common.GetMetadataValue(ctx, LoginChallenge)
 	email := strings.ToLower(strings.TrimSpace(req.GetEmail()))
-	firstname := req.GetFirstName()
-	lastname := req.GetLastName()
+	firstname := strings.TrimSpace(req.GetFirstName())
+	lastname := strings.TrimSpace(req.GetLastName())
 	password := strings.TrimSpace(req.GetPassword())
 	cpassword := strings.TrimSpace(req.GetConfirmPassword())
 

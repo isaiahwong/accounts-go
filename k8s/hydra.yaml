@@ -39,7 +39,7 @@ spec:
       #         name: accounts-env-secrets
       containers:
         - name: hydra
-          image: oryd/hydra:v1.3.2-alpine
+          image: oryd/hydra:v1.4.10-alpine
           command: ["/bin/sh","-c"]
           args: ["hydra migrate sql --yes $(DSN) && hydra serve all --dangerous-force-http"]
           ports:
@@ -68,3 +68,5 @@ data:
   URLS_ERROR: "http://127.0.0.1/auth/notfound"
   URLS_POST_LOGOUT_REDIRECT: "http://127.0.0.1/auth/logout"
   SERVE_COOKIES_SAME_SITE_MODE: "Lax"
+  TTL_ACCESS_TOKEN: "720h"
+  TTL_ID_TOKEN: "720h"
