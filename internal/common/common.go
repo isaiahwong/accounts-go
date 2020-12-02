@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"google.golang.org/grpc/metadata"
@@ -13,9 +12,6 @@ import (
 func MapEnvWithDefaults(envKey string, defaults string) string {
 	v := os.Getenv(envKey)
 	if v == "" {
-		if defaults == "" {
-			panic(fmt.Sprint(envKey, " defaults is not specified"))
-		}
 		return defaults
 	}
 	return v

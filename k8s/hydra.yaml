@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: hydra-service
+  labels:
+    service: hydra
 spec:
   ports:
   - name: hydra-public-port

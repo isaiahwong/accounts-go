@@ -92,6 +92,9 @@ func WithInitialTimeout(t time.Duration) MongoOption {
 // WithAuth Authentication for mongodb
 func WithAuth(credential MongoCredential) MongoOption {
 	return func(o *mongoOptions, m *options.ClientOptions) {
+		if credential.Username == "" || credential.Password == "" {
+			return
+		}
 		m.SetAuth(options.Credential{
 			AuthMechanism: credential.AuthMechanism,
 			AuthSource:    credential.AuthSource,
